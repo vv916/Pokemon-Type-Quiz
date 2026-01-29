@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ポケモン タイプ相性マスター Platinum V5</title>
+    <title>ポケモン タイプ相性マスター Platinum V7</title>
     <style>
         :root {
             --primary: #222;
@@ -19,15 +19,15 @@
             margin: 0;
             display: flex;
             justify-content: center;
-            align-items: flex-start; /* 上寄せに変更 */
+            align-items: flex-start;
             min-height: 100vh;
             color: #333;
-            overflow-y: auto; /* スクロールを許可 */
+            overflow-y: auto;
             padding: 10px 0;
         }
         .container {
             background: white;
-            padding: 1.5rem;
+            padding: 1.2rem;
             border-radius: 20px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
             width: 92%;
@@ -41,10 +41,10 @@
         /* メニュー画面 */
         .menu-section { margin-bottom: 20px; }
         .menu-label { 
-            font-size: 1.3rem; 
+            font-size: 1.2rem; 
             font-weight: 900; 
             color: var(--primary); 
-            margin-bottom: 10px; 
+            margin-bottom: 8px; 
             display: block;
             border-left: 6px solid var(--secondary);
             padding-left: 10px;
@@ -52,26 +52,25 @@
         }
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .menu-btn {
-            padding: 15px 5px; font-size: 0.95rem; font-weight: bold;
+            padding: 14px 5px; font-size: 0.9rem; font-weight: bold;
             border: 2px solid #eee; border-radius: 12px; background: #fff;
             color: #444; cursor: pointer; transition: 0.2s;
         }
         .menu-btn:hover { border-color: var(--secondary); background: #f8fbff; }
 
         /* クイズ画面共通 */
-        .info-bar { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px; color: #888; font-size: 0.9rem; }
-        .quiz-box { background: #fff; border: 1px solid #eee; padding: 1rem; border-radius: 12px; margin-bottom: 10px; }
+        .info-bar { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px; color: #888; font-size: 0.85rem; }
+        .quiz-box { background: #fff; border: 1px solid #eee; padding: 0.8rem; border-radius: 12px; margin-bottom: 8px; }
 
         /* タイプバッジ表示 */
         .type-badge {
             display: inline-block; padding: 4px 8px; border-radius: 6px;
-            color: white; font-size: 0.8rem; font-weight: bold; margin: 2px;
+            color: white; font-size: 0.75rem; font-weight: bold; margin: 2px;
             text-shadow: 1px 1px 1px rgba(0,0,0,0.3); border: 2px solid transparent;
         }
         .selectable { cursor: pointer; user-select: none; }
-        .selectable.active { border-color: var(--selected-border); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .selectable.active { border-color: var(--selected-border); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); background-color: #eee; }
 
-        /* 各タイプカラー */
         .normal { background: #A8A878; } .fire { background: #F08030; } .water { background: #6890F0; }
         .electric { background: #F8D030; } .grass { background: #78C850; } .ice { background: #98D8D8; }
         .fighting { background: #C03028; } .poison { background: #A040A0; } .ground { background: #E0C068; }
@@ -79,40 +78,28 @@
         .rock { background: #B8A038; } .ghost { background: #705898; } .dragon { background: #7038F8; }
         .dark { background: #705848; } .steel { background: #B8B8D0; } .fairy { background: #EE99AC; }
 
-        /* 棒グラフ（コンパクト化） */
+        /* コンパクトな行表示 */
+        .compact-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
         .chart-row { display: flex; align-items: center; margin: 1px 0; border-bottom: 1px solid #f0f0f0; }
-        .chart-label { width: 45px; font-size: 0.75rem; font-weight: bold; color: #666; text-align: left; }
-        .chart-bar { flex-grow: 1; display: flex; flex-wrap: wrap; gap: 1px; padding: 3px; min-height: 28px; }
+        .chart-label { width: 45px; font-size: 0.7rem; font-weight: bold; color: #666; text-align: left; }
+        .chart-bar { flex-grow: 1; display: flex; flex-wrap: wrap; gap: 1px; padding: 2px; min-height: 26px; }
 
-        /* 全タイプ選択グリッド（3列または6列） */
         .selection-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 10px; }
-        
         .opt-btn { padding: 15px; border: none; border-radius: 10px; background: var(--secondary); color: white; font-weight: bold; font-size: 1.1rem; cursor: pointer; width: 100%; margin-top: 10px; }
         
-        /* 巨大判定オーバーレイ（レスポンシブ対応） */
         #judge-overlay {
-            position: fixed; /* 画面全体に固定 */
-            top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             display: none; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 2000;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(5px);
+            z-index: 2000; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px);
         }
-        #judge-text { 
-            font-size: 40vw; /* 画面幅に応じて変化 */
-            max-font-size: 300px;
-            font-weight: bold; line-height: 1; margin: 0; 
-        }
+        #judge-text { font-size: 40vw; max-font-size: 300px; font-weight: bold; line-height: 1; margin: 0; }
         #judge-text.correct { color: var(--correct-text); }
         #judge-text.wrong { color: var(--wrong-text); }
         #answer-info { font-size: 1.4rem; font-weight: bold; color: #333; margin-top: -5px; padding: 0 10px; }
 
-        .accuracy-val { font-size: 4rem; font-weight: bold; color: var(--secondary); margin: 15px 0; }
-
-        /* 小さな画面向けの調整 */
         @media screen and (max-width: 400px) {
             .selection-grid { grid-template-columns: repeat(3, 1fr); }
-            .type-badge { padding: 6px; font-size: 0.85rem; }
+            .type-badge { padding: 5px; font-size: 0.85rem; }
         }
     </style>
 </head>
@@ -128,7 +115,14 @@
             </div>
         </div>
         <div class="menu-section">
-            <span class="menu-label">タイプを推測するクイズ</span>
+            <span class="menu-label">攻撃タイプ推測クイズ</span>
+            <div class="menu-grid">
+                <button class="menu-btn" onclick="startQuiz('attackGuess', 0)">エンドレス</button>
+                <button class="menu-btn" onclick="startQuiz('attackGuess', 10)">10問挑戦</button>
+            </div>
+        </div>
+        <div class="menu-section">
+            <span class="menu-label">防御タイプ推測クイズ</span>
             <div class="menu-grid">
                 <button class="menu-btn" onclick="startQuiz('guessType', 0)">エンドレス</button>
                 <button class="menu-btn" onclick="startQuiz('guessType', 10)">10問挑戦</button>
@@ -160,42 +154,20 @@
 
     <div id="summary-screen" class="hidden">
         <h2>結果発表</h2>
-        <div class="accuracy-val"><span id="final-accuracy">0</span>%</div>
+        <div id="final-accuracy-box" style="font-size: 4rem; font-weight: bold; color: var(--secondary); margin: 15px 0;"><span id="final-accuracy">0</span>%</div>
         <p style="font-size: 1.2rem;">正解数: <span id="final-correct">0</span> / 10</p>
         <button class="opt-btn" onclick="location.reload()">タイトルへ戻る</button>
     </div>
 </div>
 
 <script>
-    // --- データ・定数 ---
-    const typeChart = {
-        "ノーマル": { "いわ": 0.5, "ゴースト": 0, "はがね": 0.5 },
-        "ほのお": { "ほのお": 0.5, "みず": 0.5, "くさ": 2, "こおり": 2, "むし": 2, "いわ": 0.5, "ドラゴン": 0.5, "はがね": 2 },
-        "みず": { "ほのお": 2, "みず": 0.5, "くさ": 0.5, "じめん": 2, "いわ": 2, "ドラゴン": 0.5 },
-        "でんき": { "みず": 2, "でんき": 0.5, "くさ": 0.5, "じめん": 0, "ひこう": 2, "ドラゴン": 0.5 },
-        "くさ": { "ほのお": 0.5, "みず": 2, "くさ": 0.5, "どく": 0.5, "じめん": 2, "ひこう": 0.5, "むし": 0.5, "いわ": 2, "ドラゴン": 0.5, "はがね": 0.5 },
-        "こおり": { "ほのお": 0.5, "みず": 0.5, "くさ": 2, "こおり": 0.5, "じめん": 2, "ひこう": 2, "ドラゴン": 2, "はがね": 0.5 },
-        "かくとう": { "ノーマル": 2, "こおり": 2, "どく": 0.5, "ひこう": 0.5, "エスパー": 0.5, "むし": 0.5, "いわ": 2, "ゴースト": 0, "あく": 2, "はがね": 2, "フェアリー": 0.5 },
-        "どく": { "くさ": 2, "どく": 0.5, "じめん": 0.5, "いわ": 0.5, "ゴースト": 0.5, "はがね": 0, "フェアリー": 2 },
-        "じめん": { "ほのお": 2, "でんき": 2, "くさ": 0.5, "どく": 2, "ひこう": 0, "むし": 0.5, "いわ": 2, "はがね": 2 },
-        "ひこう": { "でんき": 0.5, "くさ": 2, "かくとう": 2, "むし": 2, "いわ": 0.5, "はがね": 0.5 },
-        "エスパー": { "かくとう": 2, "どく": 2, "エスパー": 0.5, "あく": 0, "はがね": 0.5 },
-        "むし": { "ほのお": 0.5, "くさ": 2, "かくとう": 0.5, "どく": 0.5, "ひこう": 0.5, "エスパー": 2, "ゴースト": 0.5, "あく": 2, "はがね": 0.5, "フェアリー": 0.5 },
-        "いわ": { "ほのお": 2, "こおり": 2, "かくとう": 0.5, "じめん": 0.5, "ひこう": 2, "むし": 2, "はがね": 0.5 },
-        "ゴースト": { "ノーマル": 0, "エスパー": 2, "ゴースト": 2, "あく": 0.5 },
-        "ドラゴン": { "ドラゴン": 2, "はがね": 0.5, "フェアリー": 0 },
-        "あく": { "かくとう": 0.5, "エスパー": 2, "ゴースト": 2, "あく": 0.5, "フェアリー": 0.5 },
-        "はがね": { "ほのお": 0.5, "みず": 0.5, "でんき": 0.5, "こおり": 2, "いわ": 2, "はがね": 0.5, "フェアリー": 2 },
-        "フェアリー": { "ほのお": 0.5, "かくとう": 2, "どく": 0.5, "ドラゴン": 2, "あく": 2, "はがね": 0.5 }
-    };
+    const typeChart = { "ノーマル": { "いわ": 0.5, "ゴースト": 0, "はがね": 0.5 }, "ほのお": { "ほのお": 0.5, "みず": 0.5, "くさ": 2, "こおり": 2, "むし": 2, "いわ": 0.5, "ドラゴン": 0.5, "はがね": 2 }, "みず": { "ほのお": 2, "みず": 0.5, "くさ": 0.5, "じめん": 2, "いわ": 2, "ドラゴン": 0.5 }, "でんき": { "みず": 2, "でんき": 0.5, "くさ": 0.5, "じめん": 0, "ひこう": 2, "ドラゴン": 0.5 }, "くさ": { "ほのお": 0.5, "みず": 2, "くさ": 0.5, "どく": 0.5, "じめん": 2, "ひこう": 0.5, "むし": 0.5, "いわ": 2, "ドラゴン": 0.5, "はがね": 0.5 }, "こおり": { "ほのお": 0.5, "みず": 0.5, "くさ": 2, "こおり": 0.5, "じめん": 2, "ひこう": 2, "ドラゴン": 2, "はがね": 0.5 }, "かくとう": { "ノーマル": 2, "こおり": 2, "どく": 0.5, "ひこう": 0.5, "エスパー": 0.5, "むし": 0.5, "いわ": 2, "ゴースト": 0, "あく": 2, "はがね": 2, "フェアリー": 0.5 }, "どく": { "くさ": 2, "どく": 0.5, "じめん": 0.5, "いわ": 0.5, "ゴースト": 0.5, "はがね": 0, "フェアリー": 2 }, "じめん": { "ほのお": 2, "でんき": 2, "くさ": 0.5, "どく": 2, "ひこう": 0, "むし": 0.5, "いわ": 2, "はがね": 2 }, "ひこう": { "でんき": 0.5, "くさ": 2, "かくとう": 2, "むし": 2, "いわ": 0.5, "はがね": 0.5 }, "エスパー": { "かくとう": 2, "どく": 2, "エスパー": 0.5, "あく": 0, "はがね": 0.5 }, "むし": { "ほのお": 0.5, "くさ": 2, "かくとう": 0.5, "どく": 0.5, "ひこう": 0.5, "エスパー": 2, "ゴースト": 0.5, "あく": 2, "はがね": 0.5, "フェアリー": 0.5 }, "いわ": { "ほのお": 2, "こおり": 2, "かくとう": 0.5, "じめん": 0.5, "ひこう": 2, "むし": 2, "はがね": 0.5 }, "ゴースト": { "ノーマル": 0, "エスパー": 2, "ゴースト": 2, "あく": 0.5 }, "ドラゴン": { "ドラゴン": 2, "はがね": 0.5, "フェアリー": 0 }, "あく": { "かくとう": 0.5, "エスパー": 2, "ゴースト": 2, "あく": 0.5, "フェアリー": 0.5 }, "はがね": { "ほのお": 0.5, "みず": 0.5, "でんき": 0.5, "こおり": 2, "いわ": 2, "はがね": 0.5, "フェアリー": 2 }, "フェアリー": { "ほのお": 0.5, "かくとう": 2, "どく": 0.5, "ドラゴン": 2, "あく": 2, "はがね": 0.5 } };
     const typeEng = { "ノーマル": "normal", "ほのお": "fire", "みず": "water", "でんき": "electric", "くさ": "grass", "こおり": "ice", "かくとう": "fighting", "どく": "poison", "じめん": "ground", "ひこう": "flying", "エスパー": "psychic", "むし": "bug", "いわ": "rock", "ゴースト": "ghost", "ドラゴン": "dragon", "あく": "dark", "はがね": "steel", "フェアリー": "fairy" };
     const types = Object.keys(typeChart);
 
-    // --- 状態管理 ---
     let currentMode, questionLimit, currentQIndex, correctCount, score;
     let correctAnswerSet = [], selectedTypes = [], isTransitioning = false, questionHistory = [];
 
-    // --- ゲーム制御 ---
     function startQuiz(mode, limit) {
         currentMode = mode; questionLimit = limit; currentQIndex = 0; correctCount = 0; score = 0;
         document.getElementById('menu-screen').classList.add('hidden');
@@ -211,19 +183,19 @@
         document.getElementById('judge-overlay').style.display = 'none';
         const qArea = document.getElementById('question-area'), sArea = document.getElementById('selection-container');
         sArea.innerHTML = "";
-        window.scrollTo(0, 0); // 次の問題で上に戻る
+        window.scrollTo(0, 0);
 
         if (currentMode === "multiplier") generateMultiplierQuiz(qArea, sArea);
         else if (currentMode === "guessType") generateGuessTypeQuiz(qArea, sArea);
         else if (currentMode === "defensive") generateDefensiveQuiz(qArea, sArea);
+        else if (currentMode === "attackGuess") generateAttackGuessQuiz(qArea, sArea);
     }
 
-    // --- 各モード生成 ---
     function generateMultiplierQuiz(qArea, sArea) {
         let atk, def, qId;
-        do { atk = types[Math.floor(Math.random() * types.length)]; def = getRandomDefense(); qId = "M:"+atk+def.join(","); } while (questionHistory.includes(qId));
+        do { atk = types[Math.floor(Math.random() * types.length)]; def = getRandomDefense(false); qId = "M:"+atk+def.join(","); } while (questionHistory.includes(qId));
         recordHistory(qId);
-        qArea.innerHTML = `<div style="font-size:0.85rem; color:#999; margin-bottom:8px;">攻撃：${badge(atk)} → 防御：${def.map(t => badge(t)).join('')}</div><div style="font-size:1.2rem; font-weight:bold;">ダメージ倍率は？</div>`;
+        qArea.innerHTML = `<div style="font-size:0.8rem; color:#999; margin-bottom:5px;">攻撃：${badge(atk)} → 防御：${def.map(t => badge(t)).join('')}</div><div style="font-size:1.1rem; font-weight:bold;">ダメージ倍率は？</div>`;
         const grid = document.createElement('div'); grid.className = "selection-grid"; grid.style.gridTemplateColumns = "repeat(3, 1fr)";
         ["4", "2", "1", "0.5", "0.25", "0"].forEach(v => {
             const btn = document.createElement('button'); btn.className = "opt-btn"; btn.textContent = "×"+v;
@@ -235,59 +207,69 @@
 
     function generateGuessTypeQuiz(qArea, sArea) {
         let target, qId;
-        do { target = getRandomDefense(); qId = "G:"+target.join(","); } while (questionHistory.includes(qId));
+        do { target = getRandomDefense(false); qId = "G:"+target.join(","); } while (questionHistory.includes(qId));
         recordHistory(qId);
         correctAnswerSet = target;
         const table = {"4":[],"2":[],"1":[],"0.5":[],"0.25":[],"0":[]};
         types.forEach(atk => table[calculate(atk, target).toString()].push(badge(atk)));
-        qArea.innerHTML = `<div style="font-size:0.85rem; color:#999; margin-bottom:5px;">この耐性を持つタイプは？</div>${row("×4",table["4"])}${row("×2",table["2"])}${row("×1",table["1"])}${row("×0.5",table["0.5"])}${row("×0.25",table["0.25"])}${row("×0",table["0"])}`;
-        renderTypeGrid(sArea, true);
+        qArea.innerHTML = `<div style="font-size:0.8rem; color:#999; margin-bottom:5px;">この耐性を持つタイプは？</div>${row("×4",table["4"])}${row("×2",table["2"])}${row("×1",table["1"])}${row("×0.5",table["0.5"])}${row("×0.25",table["0.25"])}${row("×0",table["0"])}`;
+        renderSelectionGrid(sArea, 2);
     }
 
     function generateDefensiveQuiz(qArea, sArea) {
         let opponent, qId;
-        do { opponent = getRandomDefense(); qId = "D:"+opponent.join(","); } while (questionHistory.includes(qId));
+        do { opponent = getRandomDefense(false); qId = "D:"+opponent.join(","); } while (questionHistory.includes(qId));
         recordHistory(qId);
-        const stabs = opponent;
-        qArea.innerHTML = `<div style="font-size:0.8rem; color:#999;">相手のタイプ</div>${opponent.map(t => badge(t)).join('')}<div style="font-size:1.05rem; font-weight:bold; margin-top:10px;">相手のタイプ一致技をすべて<br>半減以下にできる複合タイプは？</div>`;
-        
+        qArea.innerHTML = `<div style="font-size:0.8rem; color:#999;">相手のタイプ</div>${opponent.map(t => badge(t)).join('')}<div style="font-size:1rem; font-weight:bold; margin-top:8px;">相手のタイプ一致技をすべて<br>半減以下にできる複合タイプは？</div>`;
         let allValid = [];
         for(let i=0; i<types.length; i++) {
             for(let j=i+1; j<types.length; j++) {
-                if(stabs.every(s => calculate(s, [types[i], types[j]]) <= 0.5)) allValid.push([types[i], types[j]]);
+                if(opponent.every(s => calculate(s, [types[i], types[j]]) <= 0.5)) allValid.push([types[i], types[j]]);
             }
         }
         if (allValid.length === 0) { nextQuestion(); return; }
-        const correctCombo = allValid[Math.floor(Math.random() * allValid.length)];
-        const correctStr = correctCombo.join('・');
-
+        const correct = allValid[Math.floor(Math.random() * allValid.length)].join('・');
         let distractors = [];
         while(distractors.length < 3) {
-            let t1 = types[Math.floor(Math.random() * types.length)], t2 = types[Math.floor(Math.random() * types.length)];
-            if(t1 === t2) continue;
-            let d = [t1, t2].sort(), dStr = d.join('・');
-            if(dStr !== correctStr && !stabs.every(s => calculate(s, d) <= 0.5) && !distractors.includes(dStr)) distractors.push(dStr);
+            let d = getRandomDefense(true); let dStr = d.join('・');
+            if(dStr !== correct && !distractors.includes(dStr)) distractors.push(dStr);
         }
-
-        const choices = [correctStr, ...distractors].sort(() => Math.random() - 0.5);
-        const grid = document.createElement('div');
-        grid.style.display = "grid"; grid.style.gridTemplateColumns = "1fr 1fr"; grid.style.gap = "8px"; grid.style.marginTop = "10px";
+        const choices = [correct, ...distractors].sort(() => Math.random() - 0.5);
+        const grid = document.createElement('div'); grid.style.display="grid"; grid.style.gridTemplateColumns="1fr 1fr"; grid.style.gap="8px"; grid.style.marginTop="10px";
         choices.forEach(c => {
-            const btn = document.createElement('button');
-            btn.className = "menu-btn"; btn.style.padding = "10px 5px";
-            btn.innerHTML = c.split('・').map(t => badge(t)).join(' ');
-            btn.onclick = () => checkAnswer(c, correctStr);
+            const btn = document.createElement('button'); btn.className = "menu-btn"; btn.innerHTML = c.split('・').map(t => badge(t)).join(' ');
+            btn.onclick = () => checkAnswer(c, correct);
             grid.appendChild(btn);
         });
         sArea.appendChild(grid);
     }
 
-    // --- UIヘルパー ---
-    function renderTypeGrid(container, multi) {
+    function generateAttackGuessQuiz(qArea, sArea) {
+        let attackType, qId;
+        do { attackType = types[Math.floor(Math.random() * types.length)]; qId = "A:"+attackType; } while (questionHistory.includes(qId));
+        recordHistory(qId);
+        correctAnswerSet = [attackType];
+        
+        let targetList = [];
+        while(targetList.length < 4) {
+            let t = getRandomDefense(true);
+            if(!targetList.some(item => item.join(',') === t.join(','))) targetList.push(t);
+        }
+
+        let html = `<div style="font-size:0.8rem; color:#999; margin-bottom:5px;">この倍率になる攻撃タイプは？</div>`;
+        targetList.forEach(def => {
+            const m = calculate(attackType, def);
+            html += `<div class="compact-row"><span>${def.map(t => badge(t)).join('')}</span> <span style="font-weight:bold;">×${m}</span></div>`;
+        });
+        qArea.innerHTML = html;
+        renderSelectionGrid(sArea, 1);
+    }
+
+    function renderSelectionGrid(container, max) {
         const grid = document.createElement('div'); grid.className = "selection-grid";
         types.forEach(t => {
             const b = document.createElement('div'); b.className = `type-badge selectable ${typeEng[t]}`;
-            b.textContent = t.substring(0,2); b.onclick = () => toggleType(t, b);
+            b.textContent = t.substring(0,2); b.onclick = () => toggleType(t, b, max);
             grid.appendChild(b);
         });
         container.appendChild(grid);
@@ -300,39 +282,40 @@
         container.appendChild(decBtn);
     }
 
-    function toggleType(name, element) {
+    function toggleType(name, element, max) {
         if (isTransitioning) return;
         const idx = selectedTypes.indexOf(name);
         if (idx > -1) { selectedTypes.splice(idx, 1); element.classList.remove('active'); }
-        else { if(selectedTypes.length < 2) { selectedTypes.push(name); element.classList.add('active'); } }
+        else { if(selectedTypes.length < max) { selectedTypes.push(name); element.classList.add('active'); } }
     }
 
     function checkAnswer(userInput, correctInput, displayCorrect = "") {
         if (isTransitioning) return;
         isTransitioning = true;
         const overlay = document.getElementById('judge-overlay'), jText = document.getElementById('judge-text'), aInfo = document.getElementById('answer-info');
-        overlay.style.display = 'flex'; jText.className = "";
-        if (userInput === correctInput) { jText.textContent = "○"; jText.classList.add('correct'); aInfo.textContent = ""; score += 10; correctCount++; }
-        else { jText.textContent = "×"; jText.classList.add('wrong'); aInfo.textContent = `正解：${displayCorrect || correctInput}`; score = Math.max(0, score - 5); }
+        overlay.style.display = 'flex';
+        if (userInput === correctInput) { jText.textContent = "○"; jText.className = "correct"; aInfo.textContent = ""; score += 10; correctCount++; }
+        else { jText.textContent = "×"; jText.className = "wrong"; aInfo.textContent = `正解：${displayCorrect || correctInput}`; score = Math.max(0, score - 5); }
         document.getElementById('score').textContent = score;
         setTimeout(nextQuestion, 1200);
     }
 
-    // --- ロジック ---
     function calculate(atk, defs) { let m = 1; defs.forEach(d => { if (typeChart[atk][d] !== undefined) m *= typeChart[atk][d]; }); return m; }
-    function getRandomDefense() {
+    
+    function getRandomDefense(forceDual) {
+        if (forceDual) {
+            let t1 = types[Math.floor(Math.random() * types.length)], t2 = types[Math.floor(Math.random() * types.length)];
+            while(t1 === t2) t2 = types[Math.floor(Math.random() * types.length)];
+            return [t1, t2].sort();
+        }
         const t1 = types[Math.floor(Math.random() * types.length)], t2 = types[Math.floor(Math.random() * types.length)];
         return t1 === t2 ? [t1] : [t1, t2].sort();
     }
+
     function recordHistory(id) { questionHistory.push(id); if (questionHistory.length > 5) questionHistory.shift(); }
     function row(label, badges) { return `<div class="chart-row"><div class="chart-label">${label}</div><div class="chart-bar">${badges.join('')}</div></div>`; }
     function badge(name) { return `<span class="type-badge ${typeEng[name]}">${name}</span>`; }
-    function showSummary() {
-        document.getElementById('quiz-screen').classList.add('hidden');
-        document.getElementById('summary-screen').classList.remove('hidden');
-        document.getElementById('final-correct').textContent = correctCount;
-        document.getElementById('final-accuracy').textContent = Math.round((correctCount / questionLimit) * 100);
-    }
+    function showSummary() { document.getElementById('quiz-screen').classList.add('hidden'); document.getElementById('summary-screen').classList.remove('hidden'); document.getElementById('final-correct').textContent = correctCount; document.getElementById('final-accuracy').textContent = Math.round((correctCount / questionLimit) * 100); }
     function confirmExit() { if (confirm("タイトルに戻りますか？")) location.reload(); }
 </script>
 
