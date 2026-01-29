@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ポケモン タイプ相性マスター Platinum V7</title>
+    <title>ポケモン タイプ相性マスター Platinum V7.1</title>
     <style>
         :root {
             --primary: #222;
@@ -251,15 +251,21 @@
         correctAnswerSet = [attackType];
         
         let targetList = [];
-        while(targetList.length < 4) {
+        // 項目数を6つに増やす
+        while(targetList.length < 6) {
             let t = getRandomDefense(true);
             if(!targetList.some(item => item.join(',') === t.join(','))) targetList.push(t);
         }
 
+        // 倍率を計算して降順（大きい順）にソート
+        let displayList = targetList.map(def => {
+            return { def: def, mult: calculate(attackType, def) };
+        });
+        displayList.sort((a, b) => b.mult - a.mult);
+
         let html = `<div style="font-size:0.8rem; color:#999; margin-bottom:5px;">この倍率になる攻撃タイプは？</div>`;
-        targetList.forEach(def => {
-            const m = calculate(attackType, def);
-            html += `<div class="compact-row"><span>${def.map(t => badge(t)).join('')}</span> <span style="font-weight:bold;">×${m}</span></div>`;
+        displayList.forEach(item => {
+            html += `<div class="compact-row"><span>${item.def.map(t => badge(t)).join('')}</span> <span style="font-weight:bold;">×${item.mult}</span></div>`;
         });
         qArea.innerHTML = html;
         renderSelectionGrid(sArea, 1);
