@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ポケモン タイプ相性マスター Platinum V7.1</title>
+    <title>ポケモン タイプ・素早さマスター Platinum V8</title>
     <style>
         :root {
             --primary: #222;
@@ -41,14 +41,9 @@
         /* メニュー画面 */
         .menu-section { margin-bottom: 20px; }
         .menu-label { 
-            font-size: 1.2rem; 
-            font-weight: 900; 
-            color: var(--primary); 
-            margin-bottom: 8px; 
-            display: block;
-            border-left: 6px solid var(--secondary);
-            padding-left: 10px;
-            text-align: left;
+            font-size: 1.2rem; font-weight: 900; color: var(--primary); 
+            margin-bottom: 8px; display: block; border-left: 6px solid var(--secondary);
+            padding-left: 10px; text-align: left;
         }
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .menu-btn {
@@ -69,7 +64,7 @@
             text-shadow: 1px 1px 1px rgba(0,0,0,0.3); border: 2px solid transparent;
         }
         .selectable { cursor: pointer; user-select: none; }
-        .selectable.active { border-color: var(--selected-border); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); background-color: #eee; }
+        .selectable.active { border-color: var(--selected-border); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
 
         .normal { background: #A8A878; } .fire { background: #F08030; } .water { background: #6890F0; }
         .electric { background: #F8D030; } .grass { background: #78C850; } .ice { background: #98D8D8; }
@@ -78,7 +73,7 @@
         .rock { background: #B8A038; } .ghost { background: #705898; } .dragon { background: #7038F8; }
         .dark { background: #705848; } .steel { background: #B8B8D0; } .fairy { background: #EE99AC; }
 
-        /* コンパクトな行表示 */
+        /* 行表示 */
         .compact-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
         .chart-row { display: flex; align-items: center; margin: 1px 0; border-bottom: 1px solid #f0f0f0; }
         .chart-label { width: 45px; font-size: 0.7rem; font-weight: bold; color: #666; text-align: left; }
@@ -87,6 +82,14 @@
         .selection-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 10px; }
         .opt-btn { padding: 15px; border: none; border-radius: 10px; background: var(--secondary); color: white; font-weight: bold; font-size: 1.1rem; cursor: pointer; width: 100%; margin-top: 10px; }
         
+        /* 素早さ比較用スタイル */
+        .speed-pkmn-container { display: flex; justify-content: space-around; align-items: flex-start; margin: 10px 0; gap: 10px; }
+        .speed-card { flex: 1; background: #f9f9f9; padding: 10px; border-radius: 10px; border: 1px solid #eee; cursor: pointer; transition: 0.2s; }
+        .speed-card img { width: 80px; height: 80px; object-fit: contain; }
+        .speed-card .name { font-size: 0.85rem; font-weight: bold; margin-top: 5px; }
+        .speed-card:hover { background: #f0f7ff; border-color: var(--secondary); }
+
+        /* 超巨大判定 */
         #judge-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             display: none; flex-direction: column; justify-content: center; align-items: center;
@@ -135,6 +138,13 @@
                 <button class="menu-btn" onclick="startQuiz('defensive', 10)">10問挑戦</button>
             </div>
         </div>
+        <div class="menu-section">
+            <span class="menu-label">素早さ比較クイズ (PokeAPI)</span>
+            <div class="menu-grid">
+                <button class="menu-btn" onclick="startQuiz('speed', 0)">エンドレス</button>
+                <button class="menu-btn" onclick="startQuiz('speed', 10)">10問挑戦</button>
+            </div>
+        </div>
     </div>
 
     <div id="quiz-screen" class="hidden">
@@ -154,7 +164,7 @@
 
     <div id="summary-screen" class="hidden">
         <h2>結果発表</h2>
-        <div id="final-accuracy-box" style="font-size: 4rem; font-weight: bold; color: var(--secondary); margin: 15px 0;"><span id="final-accuracy">0</span>%</div>
+        <div style="font-size: 4rem; font-weight: bold; color: var(--secondary); margin: 15px 0;"><span id="final-accuracy">0</span>%</div>
         <p style="font-size: 1.2rem;">正解数: <span id="final-correct">0</span> / 10</p>
         <button class="opt-btn" onclick="location.reload()">タイトルへ戻る</button>
     </div>
@@ -175,7 +185,7 @@
         nextQuestion();
     }
 
-    function nextQuestion() {
+    async function nextQuestion() {
         if (questionLimit > 0 && currentQIndex >= questionLimit) { showSummary(); return; }
         currentQIndex++;
         document.getElementById('q-count-display').textContent = questionLimit > 0 ? `第 ${currentQIndex}/${questionLimit}` : `第 ${currentQIndex} 問`;
@@ -189,13 +199,23 @@
         else if (currentMode === "guessType") generateGuessTypeQuiz(qArea, sArea);
         else if (currentMode === "defensive") generateDefensiveQuiz(qArea, sArea);
         else if (currentMode === "attackGuess") generateAttackGuessQuiz(qArea, sArea);
+        else if (currentMode === "speed") generateSpeedQuiz(qArea, sArea);
     }
 
+    // --- ロジック ---
+    function getRandomDefense(forceDual) {
+        const t1 = types[Math.floor(Math.random() * types.length)];
+        const t2 = types[Math.floor(Math.random() * types.length)];
+        if (forceDual && t1 === t2) return getRandomDefense(true);
+        return t1 === t2 ? [t1] : [t1, t2].sort();
+    }
+
+    function calculate(atk, defs) { let m = 1; defs.forEach(d => { if (typeChart[atk][d] !== undefined) m *= typeChart[atk][d]; }); return m; }
+
+    // --- 各モード生成 ---
     function generateMultiplierQuiz(qArea, sArea) {
-        let atk, def, qId;
-        do { atk = types[Math.floor(Math.random() * types.length)]; def = getRandomDefense(false); qId = "M:"+atk+def.join(","); } while (questionHistory.includes(qId));
-        recordHistory(qId);
-        qArea.innerHTML = `<div style="font-size:0.8rem; color:#999; margin-bottom:5px;">攻撃：${badge(atk)} → 防御：${def.map(t => badge(t)).join('')}</div><div style="font-size:1.1rem; font-weight:bold;">ダメージ倍率は？</div>`;
+        let atk = types[Math.floor(Math.random() * types.length)], def = getRandomDefense(false);
+        qArea.innerHTML = `<div style="font-size:0.8rem; color:#999;">攻撃：${badge(atk)} → 防御：${def.map(t => badge(t)).join('')}</div><div style="font-size:1.1rem; font-weight:bold;">ダメージ倍率は？</div>`;
         const grid = document.createElement('div'); grid.className = "selection-grid"; grid.style.gridTemplateColumns = "repeat(3, 1fr)";
         ["4", "2", "1", "0.5", "0.25", "0"].forEach(v => {
             const btn = document.createElement('button'); btn.className = "opt-btn"; btn.textContent = "×"+v;
@@ -205,34 +225,45 @@
         sArea.appendChild(grid);
     }
 
+    function generateAttackGuessQuiz(qArea, sArea) {
+        let attackType = types[Math.floor(Math.random() * types.length)];
+        let targetList = [];
+        while(targetList.length < 6) {
+            let t = getRandomDefense(true);
+            if(!targetList.some(item => item.join(',') === t.join(','))) targetList.push({def: t, mult: calculate(attackType, t)});
+        }
+        targetList.sort((a, b) => b.mult - a.mult);
+        let html = `<div style="font-size:0.8rem; color:#999;">この倍率になる攻撃タイプは？</div>`;
+        targetList.forEach(item => {
+            html += `<div class="compact-row"><span>${item.def.map(t => badge(t)).join('')}</span> <b>×${item.mult}</b></div>`;
+        });
+        qArea.innerHTML = html;
+        renderSelectionGrid(sArea, 1, [attackType]);
+    }
+
     function generateGuessTypeQuiz(qArea, sArea) {
-        let target, qId;
-        do { target = getRandomDefense(false); qId = "G:"+target.join(","); } while (questionHistory.includes(qId));
-        recordHistory(qId);
-        correctAnswerSet = target;
+        let target = getRandomDefense(false);
         const table = {"4":[],"2":[],"1":[],"0.5":[],"0.25":[],"0":[]};
         types.forEach(atk => table[calculate(atk, target).toString()].push(badge(atk)));
-        qArea.innerHTML = `<div style="font-size:0.8rem; color:#999; margin-bottom:5px;">この耐性を持つタイプは？</div>${row("×4",table["4"])}${row("×2",table["2"])}${row("×1",table["1"])}${row("×0.5",table["0.5"])}${row("×0.25",table["0.25"])}${row("×0",table["0"])}`;
-        renderSelectionGrid(sArea, 2);
+        qArea.innerHTML = `<div style="font-size:0.8rem; color:#999;">この耐性を持つタイプは？</div>${row("×4",table["4"])}${row("×2",table["2"])}${row("×1",table["1"])}${row("×0.5",table["0.5"])}${row("×0.25",table["0.25"])}${row("×0",table["0"])}`;
+        renderSelectionGrid(sArea, 2, target);
     }
 
     function generateDefensiveQuiz(qArea, sArea) {
-        let opponent, qId;
-        do { opponent = getRandomDefense(false); qId = "D:"+opponent.join(","); } while (questionHistory.includes(qId));
-        recordHistory(qId);
-        qArea.innerHTML = `<div style="font-size:0.8rem; color:#999;">相手のタイプ</div>${opponent.map(t => badge(t)).join('')}<div style="font-size:1rem; font-weight:bold; margin-top:8px;">相手のタイプ一致技をすべて<br>半減以下にできる複合タイプは？</div>`;
-        let allValid = [];
+        let opponent = getRandomDefense(false);
+        qArea.innerHTML = `<div style="font-size:0.8rem; color:#999;">相手のタイプ</div>${opponent.map(t => badge(t)).join('')}<div style="font-size:1rem; font-weight:bold; margin-top:8px;">タイプ一致技をすべて半減以下にする複合は？</div>`;
+        let valid = [];
         for(let i=0; i<types.length; i++) {
             for(let j=i+1; j<types.length; j++) {
-                if(opponent.every(s => calculate(s, [types[i], types[j]]) <= 0.5)) allValid.push([types[i], types[j]]);
+                if(opponent.every(s => calculate(s, [types[i], types[j]]) <= 0.5)) valid.push([types[i], types[j]].join('・'));
             }
         }
-        if (allValid.length === 0) { nextQuestion(); return; }
-        const correct = allValid[Math.floor(Math.random() * allValid.length)].join('・');
+        if (valid.length === 0) return generateDefensiveQuiz(qArea, sArea);
+        const correct = valid[Math.floor(Math.random() * valid.length)];
         let distractors = [];
         while(distractors.length < 3) {
-            let d = getRandomDefense(true); let dStr = d.join('・');
-            if(dStr !== correct && !distractors.includes(dStr)) distractors.push(dStr);
+            let d = getRandomDefense(true).join('・');
+            if(d !== correct && !valid.includes(d) && !distractors.includes(d)) distractors.push(d);
         }
         const choices = [correct, ...distractors].sort(() => Math.random() - 0.5);
         const grid = document.createElement('div'); grid.style.display="grid"; grid.style.gridTemplateColumns="1fr 1fr"; grid.style.gap="8px"; grid.style.marginTop="10px";
@@ -244,34 +275,42 @@
         sArea.appendChild(grid);
     }
 
-    function generateAttackGuessQuiz(qArea, sArea) {
-        let attackType, qId;
-        do { attackType = types[Math.floor(Math.random() * types.length)]; qId = "A:"+attackType; } while (questionHistory.includes(qId));
-        recordHistory(qId);
-        correctAnswerSet = [attackType];
-        
-        let targetList = [];
-        // 項目数を6つに増やす
-        while(targetList.length < 6) {
-            let t = getRandomDefense(true);
-            if(!targetList.some(item => item.join(',') === t.join(','))) targetList.push(t);
-        }
+    // --- 素早さ比較モード (PokeAPI利用) ---
+    async function generateSpeedQuiz(qArea, sArea) {
+        qArea.innerHTML = "データを取得中...";
+        try {
+            const id1 = Math.floor(Math.random() * 1010) + 1;
+            const id2 = Math.floor(Math.random() * 1010) + 1;
+            if(id1 === id2) return generateSpeedQuiz(qArea, sArea);
 
-        // 倍率を計算して降順（大きい順）にソート
-        let displayList = targetList.map(def => {
-            return { def: def, mult: calculate(attackType, def) };
-        });
-        displayList.sort((a, b) => b.mult - a.mult);
+            const [p1, p2] = await Promise.all([getPkmn(id1), getPkmn(id2)]);
+            if(p1.speed === p2.speed) return generateSpeedQuiz(qArea, sArea);
 
-        let html = `<div style="font-size:0.8rem; color:#999; margin-bottom:5px;">この倍率になる攻撃タイプは？</div>`;
-        displayList.forEach(item => {
-            html += `<div class="compact-row"><span>${item.def.map(t => badge(t)).join('')}</span> <span style="font-weight:bold;">×${item.mult}</span></div>`;
-        });
-        qArea.innerHTML = html;
-        renderSelectionGrid(sArea, 1);
+            qArea.innerHTML = `<div style="font-size:1rem; font-weight:bold; margin-bottom:10px;">素早さが高いのはどっち？</div>
+                <div class="speed-pkmn-container">
+                    <div class="speed-card" onclick="checkAnswer('${p1.name}', '${p1.speed > p2.speed ? p1.name : p2.name}', '${p1.name}:${p1.speed} vs ${p2.name}:${p2.speed}')">
+                        <img src="${p1.img}" alt="${p1.name}"><div class="name">${p1.name}</div>
+                    </div>
+                    <div class="speed-card" onclick="checkAnswer('${p2.name}', '${p1.speed > p2.speed ? p1.name : p2.name}', '${p1.name}:${p1.speed} vs ${p2.name}:${p2.speed}')">
+                        <img src="${p2.img}" alt="${p2.name}"><div class="name">${p2.name}</div>
+                    </div>
+                </div>`;
+        } catch (e) { qArea.innerHTML = "データの取得に失敗しました。再試行してください。"; }
     }
 
-    function renderSelectionGrid(container, max) {
+    async function getPkmn(id) {
+        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+        const data = await res.json();
+        const resSpecies = await fetch(data.species.url);
+        const dataSpecies = await resSpecies.json();
+        const name = dataSpecies.names.find(n => n.language.name === "ja-Hrkt").name;
+        const img = data.sprites.other["official-artwork"].front_default || data.sprites.front_default;
+        const speed = data.stats.find(s => s.stat.name === "speed").base_stat;
+        return { name, img, speed };
+    }
+
+    // --- 共通パーツ ---
+    function renderSelectionGrid(container, max, correctSet) {
         const grid = document.createElement('div'); grid.className = "selection-grid";
         types.forEach(t => {
             const b = document.createElement('div'); b.className = `type-badge selectable ${typeEng[t]}`;
@@ -282,8 +321,8 @@
         const decBtn = document.createElement('button'); decBtn.className = "opt-btn"; decBtn.textContent = "決定";
         decBtn.onclick = () => {
             if (isTransitioning || selectedTypes.length === 0) return;
-            const isCorrect = selectedTypes.length === correctAnswerSet.length && selectedTypes.every(t => correctAnswerSet.includes(t));
-            checkAnswer(isCorrect ? "OK" : "NG", "OK", correctAnswerSet.join('・'));
+            const isCorrect = selectedTypes.length === correctSet.length && selectedTypes.every(t => correctSet.includes(t));
+            checkAnswer(isCorrect ? "OK" : "NG", "OK", correctSet.join('・'));
         };
         container.appendChild(decBtn);
     }
@@ -292,7 +331,7 @@
         if (isTransitioning) return;
         const idx = selectedTypes.indexOf(name);
         if (idx > -1) { selectedTypes.splice(idx, 1); element.classList.remove('active'); }
-        else { if(selectedTypes.length < max) { selectedTypes.push(name); element.classList.add('active'); } }
+        else if(selectedTypes.length < max) { selectedTypes.push(name); element.classList.add('active'); }
     }
 
     function checkAnswer(userInput, correctInput, displayCorrect = "") {
@@ -306,19 +345,6 @@
         setTimeout(nextQuestion, 1200);
     }
 
-    function calculate(atk, defs) { let m = 1; defs.forEach(d => { if (typeChart[atk][d] !== undefined) m *= typeChart[atk][d]; }); return m; }
-    
-    function getRandomDefense(forceDual) {
-        if (forceDual) {
-            let t1 = types[Math.floor(Math.random() * types.length)], t2 = types[Math.floor(Math.random() * types.length)];
-            while(t1 === t2) t2 = types[Math.floor(Math.random() * types.length)];
-            return [t1, t2].sort();
-        }
-        const t1 = types[Math.floor(Math.random() * types.length)], t2 = types[Math.floor(Math.random() * types.length)];
-        return t1 === t2 ? [t1] : [t1, t2].sort();
-    }
-
-    function recordHistory(id) { questionHistory.push(id); if (questionHistory.length > 5) questionHistory.shift(); }
     function row(label, badges) { return `<div class="chart-row"><div class="chart-label">${label}</div><div class="chart-bar">${badges.join('')}</div></div>`; }
     function badge(name) { return `<span class="type-badge ${typeEng[name]}">${name}</span>`; }
     function showSummary() { document.getElementById('quiz-screen').classList.add('hidden'); document.getElementById('summary-screen').classList.remove('hidden'); document.getElementById('final-correct').textContent = correctCount; document.getElementById('final-accuracy').textContent = Math.round((correctCount / questionLimit) * 100); }
