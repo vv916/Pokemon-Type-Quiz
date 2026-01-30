@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ポケモン 種族値マスター Stable SV</title>
+    <title>ポケモン 種族値マスター BST</title>
     <style>
         :root {
             --primary: #222; --secondary: #316ab2; --bg: #f5f7f9;
@@ -29,20 +29,24 @@
         .info-bar { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px; color: #888; font-size: 0.8rem; }
         .quiz-box { background: #fff; border: 1px solid #eee; padding: 1rem; border-radius: 12px; margin-bottom: 10px; text-align: left; }
         .stat-row { display: flex; align-items: center; margin-bottom: 4px; font-size: 0.75rem; }
-        .stat-label { width: 30px; font-weight: bold; color: #666; }
+        .stat-label { width: 35px; font-weight: bold; color: #666; }
         .stat-value { width: 30px; text-align: right; font-weight: bold; margin-right: 8px; }
         .stat-bar-container { flex-grow: 1; height: 10px; background: var(--bar-bg); border-radius: 5px; overflow: hidden; }
         .stat-bar { height: 100%; transition: width 0.5s; }
+        
         .hp { background: #FF0000; } .atk { background: #F08030; } .def { background: #F8D030; }
         .spatk { background: #6890F0; } .spdef { background: #78C850; } .speed { background: #F85888; }
+        .total { background: #a0a0a0; }
+
         .selection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .pkmn-card {
             border: 2px solid #eee; border-radius: 10px; background: white;
-            padding: 4px; cursor: pointer; display: flex; flex-direction: column; align-items: center;
+            padding: 4px; cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: 0.2s;
         }
         .pkmn-card:hover { border-color: var(--secondary); background: #f0f7ff; }
-        .pkmn-card img { width: 100%; height: 60px; object-fit: contain; }
-        .pkmn-card .name { font-size: 0.6rem; font-weight: bold; margin-top: 4px; height: 2.4em; overflow: hidden; display: flex; align-items: center; text-align: center; }
+        .pkmn-card img { width: 100%; height: 65px; object-fit: contain; }
+        .pkmn-card .name { font-size: 0.65rem; font-weight: bold; margin-top: 4px; height: 2.6em; overflow: hidden; display: flex; align-items: center; text-align: center; }
+
         #judge-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             display: none; flex-direction: column; justify-content: center; align-items: center;
@@ -62,16 +66,16 @@
 
 <div class="container">
     <div id="menu-screen">
-        <h2 style="border-left: 8px solid var(--secondary); padding-left: 10px; text-align: left;">種族値クイズ SV対応版</h2>
+        <h2 style="border-left: 8px solid var(--secondary); padding-left: 10px; text-align: left;">種族値クイズ</h2>
         <button class="menu-btn" onclick="startQuiz(0)">エンドレスモード</button>
         <button class="menu-btn" onclick="startQuiz(10)">10問に挑戦</button>
-        <p style="font-size: 0.75rem; color: #888;">パルデア地方までの最終進化・無進化が出題されます</p>
+        <p style="font-size: 0.75rem; color: #888;">パルデア地方までの最終進化形が出題されます</p>
     </div>
 
     <div id="quiz-screen" class="hidden">
         <div id="loading-overlay">
             <div id="loading-msg" style="font-weight: bold; color: var(--secondary);">準備中...</div>
-            <div style="font-size: 0.8rem; color: #999; margin-top: 5px;">(通信エラー時は自動でスキップします)</div>
+            <div id="loading-progress" style="font-size: 0.8rem; color: #999; margin-top: 5px;"></div>
         </div>
         <div class="info-bar">
             <span id="q-count-display">第 1 問</span>
@@ -79,7 +83,7 @@
         </div>
         <div class="quiz-box" id="stat-area"></div>
         <div class="selection-grid" id="selection-area"></div>
-        <button onclick="confirmExit()" style="margin-top:20px; border:none; background:none; color:#bbb; cursor:pointer; font-size:0.8rem;">タイトルに戻る</button>
+        <button onclick="confirmExit()" style="margin-top:20px; border:none; background:none; color:#bbb; cursor:pointer; font-size:0.8rem; padding: 10px;">タイトルに戻る</button>
         
         <div id="judge-overlay">
             <div id="judge-text"></div>
@@ -96,16 +100,9 @@
 </div>
 
 <script>
-    // パルデア地方までを含む、確実にデータが存在する最終進化IDリスト
+    // 最終進化・無進化ポケモンのIDリスト（パルデア地方まで）
     const FINAL_IDS = [
-        3,6,9,12,15,18,26,31,34,38,59,62,65,68,73,76,80,89,91,94,103,115,121,130,131,142,143,144,145,146,149,150,
-        154,157,160,169,181,184,186,196,197,199,208,212,214,227,230,232,241,242,243,244,245,248,249,250,
-        254,257,260,282,286,289,306,310,319,330,332,334,350,359,362,365,373,376,380,381,382,383,384,
-        460,461,462,464,465,466,467,468,471,472,473,474,475,477,478,482,483,484,485,487,488,491,493,
-        500,503,508,530,534,553,560,567,571,576,579,594,606,609,612,625,630,635,637,638,639,640,643,644,645,646,
-        700,706,711,713,715,716,717,718,721,
-        800,802,807,809,812,815,818,884,887,888,889,892,893,898,
-        900,901,902,905,911,914,916,920,925,930,934,937,941,944,947,950,952,954,956,959,961,962,964,966,968,970,973,975,978,980,983,989,995,998,1000,1004,1008,1010
+        3,6,9,12,15,18,26,31,34,38,59,62,65,68,73,76,80,89,91,94,103,115,121,130,131,142,143,144,145,146,149,150,154,157,160,169,181,184,186,196,197,199,208,212,214,227,230,232,233,241,242,243,244,245,248,249,250,254,257,260,282,286,289,306,310,319,330,332,334,350,359,362,365,373,376,380,381,382,383,384,460,461,462,464,465,466,467,468,471,472,473,474,475,477,478,482,483,484,485,487,488,491,493,500,503,508,530,534,553,560,567,571,576,579,594,606,609,612,625,630,635,637,638,639,640,643,644,646,647,648,649,700,706,711,713,715,716,717,718,721,800,802,807,809,812,815,818,884,887,888,889,892,893,898,900,901,902,905,911,914,916,920,925,930,934,937,941,944,947,950,952,954,956,959,961,962,964,966,968,970,973,975,978,980,983,989,995,998,1000,1004,1008,1010
     ];
 
     let questionLimit, currentQIndex, correctCount, score, isTransitioning = false;
@@ -119,68 +116,58 @@
 
     async function nextQuestion() {
         if (questionLimit > 0 && currentQIndex >= questionLimit) { showSummary(); return; }
-        
         isTransitioning = false;
         document.getElementById('judge-overlay').style.display = 'none';
         document.getElementById('loading-overlay').style.display = 'flex';
 
-        // 6匹の重複しない候補をリストから抽出
         let candidates = [];
         let shuffledIds = [...FINAL_IDS].sort(() => 0.5 - Math.random());
         
-        // 通信ループ: 1匹ずつ確実に6匹集まるまで繰り返す
         let i = 0;
         while(candidates.length < 6) {
-            let id = shuffledIds[i];
-            document.getElementById('loading-msg').textContent = `取得中... (${candidates.length + 1}/6)`;
-            
-            const data = await fetchPkmnData(id);
-            if(data) {
-                candidates.push(data);
-            }
+            document.getElementById('loading-progress').textContent = `${candidates.length + 1} / 6 匹目を取得中...`;
+            const data = await fetchFullPkmnData(shuffledIds[i]);
+            if(data) candidates.push(data);
             i++;
-            // 万が一リストを使い切ったらシャッフルし直す
-            if(i >= shuffledIds.length) {
-                shuffledIds = [...FINAL_IDS].sort(() => 0.5 - Math.random());
-                i = 0;
-            }
         }
 
         const correct = candidates[Math.floor(Math.random() * candidates.length)];
-        
         document.getElementById('loading-overlay').style.display = 'none';
-        displayQuestion({ correct, choices: candidates });
         
+        displayQuestion({ correct, choices: candidates });
         currentQIndex++;
         document.getElementById('q-count-display').textContent = questionLimit > 0 ? `第 ${currentQIndex}/${questionLimit}` : `第 ${currentQIndex} 問`;
     }
 
-    async function fetchPkmnData(id) {
+    // 日本語名と種族値を確実に取得する関数
+    async function fetchFullPkmnData(id) {
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒でタイムアウト
-
-            const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`, { signal: controller.signal });
+            // 基本データの取得
+            const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
             if(!res.ok) return null;
             const data = await res.json();
             
-            const specRes = await fetch(data.species.url, { signal: controller.signal });
+            // 日本語名のための種（Species）データの取得
+            const specRes = await fetch(data.species.url);
             if(!specRes.ok) return null;
             const specData = await specRes.json();
             
+            // 記事の通り ja-Hrkt (日本語・かな/カナ) を探す
             const nameObj = specData.names.find(n => n.language.name === "ja-Hrkt");
             const nameJa = nameObj ? nameObj.name : data.name;
+            
+            const stats = data.stats.map(s => s.base_stat);
+            const total = stats.reduce((sum, val) => sum + val, 0);
             const img = data.sprites.other["official-artwork"].front_default || data.sprites.front_default;
             
-            clearTimeout(timeoutId);
-            return { name: nameJa, stats: data.stats.map(s => s.base_stat), img };
+            return { name: nameJa, stats, total, img };
         } catch (e) {
             return null;
         }
     }
 
     function displayQuestion(qData) {
-        displayStats(qData.correct.stats);
+        displayStats(qData.correct.stats, qData.correct.total);
         const area = document.getElementById('selection-area');
         area.innerHTML = "";
         qData.choices.forEach(p => {
@@ -192,11 +179,13 @@
         });
     }
 
-    function displayStats(stats) {
+    function displayStats(stats, total) {
         const labels = ["H", "A", "B", "C", "D", "S"];
         const cls = ["hp", "atk", "def", "spatk", "spdef", "speed"];
         const area = document.getElementById('stat-area');
         area.innerHTML = "";
+        
+        // 個別の種族値
         stats.forEach((v, i) => {
             const w = Math.min(100, (v / 200) * 100);
             area.innerHTML += `
@@ -206,6 +195,15 @@
                     <div class="stat-bar-container"><div class="stat-bar ${cls[i]}" style="width: ${w}%"></div></div>
                 </div>`;
         });
+        
+        // 合計種族値
+        const totalW = Math.min(100, (total / 720) * 100); // アルセウス級を基準に
+        area.innerHTML += `
+            <div class="stat-row" style="margin-top: 10px; padding-top: 5px; border-top: 1px solid #eee;">
+                <div class="stat-label">Total</div>
+                <div class="stat-value" style="width: 40px;">${total}</div>
+                <div class="stat-bar-container"><div class="stat-bar total" style="width: ${totalW}%"></div></div>
+            </div>`;
     }
 
     function checkAnswer(user, correct) {
