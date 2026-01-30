@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ポケモン 種族値マスター Simple Pure</title>
+    <title>ポケモン 種族値マスター Stable SV</title>
     <style>
         :root {
             --primary: #222; --secondary: #316ab2; --bg: #f5f7f9;
@@ -41,19 +41,19 @@
             padding: 4px; cursor: pointer; display: flex; flex-direction: column; align-items: center;
         }
         .pkmn-card:hover { border-color: var(--secondary); background: #f0f7ff; }
-        .pkmn-card img { width: 100%; height: 70px; object-fit: contain; }
+        .pkmn-card img { width: 100%; height: 60px; object-fit: contain; }
         .pkmn-card .name { font-size: 0.6rem; font-weight: bold; margin-top: 4px; height: 2.4em; overflow: hidden; display: flex; align-items: center; text-align: center; }
         #judge-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             display: none; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 2000; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(4px);
+            z-index: 2000; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(4px);
         }
         #judge-text { font-size: 10rem; font-weight: bold; }
         .correct { color: var(--correct-text); } .wrong { color: var(--wrong-text); }
         #loading-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.95); display: none; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 100; border-radius: 20px; font-weight: bold;
+            background: rgba(255,255,255,1); display: none; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 100; border-radius: 20px;
         }
         @media screen and (max-width: 450px) { .selection-grid { grid-template-columns: repeat(2, 1fr); } }
     </style>
@@ -62,21 +62,24 @@
 
 <div class="container">
     <div id="menu-screen">
-        <h2 style="border-left: 8px solid var(--secondary); padding-left: 10px; text-align: left;">種族値クイズ</h2>
+        <h2 style="border-left: 8px solid var(--secondary); padding-left: 10px; text-align: left;">種族値クイズ SV対応版</h2>
         <button class="menu-btn" onclick="startQuiz(0)">エンドレスモード</button>
         <button class="menu-btn" onclick="startQuiz(10)">10問に挑戦</button>
-        <p style="font-size: 0.75rem; color: #888;">最終進化・無進化ポケモンのみ出題</p>
+        <p style="font-size: 0.75rem; color: #888;">パルデア地方までの最終進化・無進化が出題されます</p>
     </div>
 
     <div id="quiz-screen" class="hidden">
-        <div id="loading-overlay"><span id="loading-msg">データを準備中...</span></div>
+        <div id="loading-overlay">
+            <div id="loading-msg" style="font-weight: bold; color: var(--secondary);">準備中...</div>
+            <div style="font-size: 0.8rem; color: #999; margin-top: 5px;">(通信エラー時は自動でスキップします)</div>
+        </div>
         <div class="info-bar">
             <span id="q-count-display">第 1 問</span>
             <span>スコア: <span id="current-score-val">0</span></span>
         </div>
         <div class="quiz-box" id="stat-area"></div>
         <div class="selection-grid" id="selection-area"></div>
-        <button onclick="confirmExit()" style="margin-top:20px; border:none; background:none; color:#bbb; cursor:pointer; font-size:0.8rem; padding: 10px;">タイトルに戻る</button>
+        <button onclick="confirmExit()" style="margin-top:20px; border:none; background:none; color:#bbb; cursor:pointer; font-size:0.8rem;">タイトルに戻る</button>
         
         <div id="judge-overlay">
             <div id="judge-text"></div>
@@ -87,15 +90,22 @@
     <div id="summary-screen" class="hidden">
         <h2 style="color: var(--secondary);">結果発表</h2>
         <div style="font-size: 4rem; font-weight: bold; color: var(--secondary); margin: 15px 0;"><span id="final-accuracy">0</span>%</div>
-        <p>正解数: <span id="final-correct">0</span> / 10</p>
+        <p>正答数: <span id="final-correct">0</span> / 10</p>
         <button class="menu-btn" style="background: var(--secondary); color: white;" onclick="location.reload()">タイトルへ戻る</button>
     </div>
 </div>
 
 <script>
-    // パルデア地方までを含む最終進化系IDリスト
-    const FINAL_EVO_IDS = [
-        3,6,9,12,15,18,26,28,31,34,38,45,49,53,59,62,65,68,71,73,76,78,80,89,91,94,101,103,105,106,107,113,115,121,127,128,130,131,134,135,136,139,141,142,143,144,145,146,149,150,154,157,160,169,181,184,186,189,195,196,197,199,208,210,212,213,214,217,225,226,227,229,230,232,233,235,241,242,243,244,245,248,249,250,251,254,257,260,282,286,289,302,303,306,310,319,321,324,330,332,334,335,336,337,338,350,351,354,359,362,365,373,376,377,378,379,380,381,382,383,384,385,461,462,463,464,465,466,467,468,470,471,472,473,474,475,477,478,479,480,481,482,483,484,485,487,488,491,493,500,503,508,518,526,530,534,537,553,555,560,561,565,567,571,576,579,584,589,593,594,596,601,604,606,609,612,621,623,625,628,630,632,635,637,638,639,640,643,644,646,647,648,649,700,701,702,703,706,707,709,711,713,715,716,717,718,721,800,801,802,807,809,812,815,818,884,887,888,889,890,891,892,893,894,895,896,897,898,900,901,902,903,904,905,911,914,916,920,925,930,934,937,941,944,947,950,952,954,956,959,961,962,964,966,968,970,973,975,978,980,983,989,995,998,1000,1004,1008,1010
+    // パルデア地方までを含む、確実にデータが存在する最終進化IDリスト
+    const FINAL_IDS = [
+        3,6,9,12,15,18,26,31,34,38,59,62,65,68,73,76,80,89,91,94,103,115,121,130,131,142,143,144,145,146,149,150,
+        154,157,160,169,181,184,186,196,197,199,208,212,214,227,230,232,241,242,243,244,245,248,249,250,
+        254,257,260,282,286,289,306,310,319,330,332,334,350,359,362,365,373,376,380,381,382,383,384,
+        460,461,462,464,465,466,467,468,471,472,473,474,475,477,478,482,483,484,485,487,488,491,493,
+        500,503,508,530,534,553,560,567,571,576,579,594,606,609,612,625,630,635,637,638,639,640,643,644,645,646,
+        700,706,711,713,715,716,717,718,721,
+        800,802,807,809,812,815,818,884,887,888,889,892,893,898,
+        900,901,902,905,911,914,916,920,925,930,934,937,941,944,947,950,952,954,956,959,961,962,964,966,968,970,973,975,978,980,983,989,995,998,1000,1004,1008,1010
     ];
 
     let questionLimit, currentQIndex, correctCount, score, isTransitioning = false;
@@ -104,7 +114,6 @@
         questionLimit = limit; currentQIndex = 0; correctCount = 0; score = 0;
         document.getElementById('menu-screen').classList.add('hidden');
         document.getElementById('quiz-screen').classList.remove('hidden');
-        document.getElementById('current-score-val').textContent = "0";
         nextQuestion();
     }
 
@@ -115,24 +124,32 @@
         document.getElementById('judge-overlay').style.display = 'none';
         document.getElementById('loading-overlay').style.display = 'flex';
 
-        // 6匹のデータを毎回APIから新規取得
-        const shuffled = [...FINAL_EVO_IDS].sort(() => 0.5 - Math.random());
-        const selectedIds = shuffled.slice(0, 6);
-        const pkmns = [];
+        // 6匹の重複しない候補をリストから抽出
+        let candidates = [];
+        let shuffledIds = [...FINAL_IDS].sort(() => 0.5 - Math.random());
         
-        for(let i=0; i<selectedIds.length; i++) {
-            document.getElementById('loading-msg').textContent = `取得中... (${i+1}/6)`;
-            const data = await fetchPkmnData(selectedIds[i]);
-            if(data) pkmns.push(data);
+        // 通信ループ: 1匹ずつ確実に6匹集まるまで繰り返す
+        let i = 0;
+        while(candidates.length < 6) {
+            let id = shuffledIds[i];
+            document.getElementById('loading-msg').textContent = `取得中... (${candidates.length + 1}/6)`;
+            
+            const data = await fetchPkmnData(id);
+            if(data) {
+                candidates.push(data);
+            }
+            i++;
+            // 万が一リストを使い切ったらシャッフルし直す
+            if(i >= shuffledIds.length) {
+                shuffledIds = [...FINAL_IDS].sort(() => 0.5 - Math.random());
+                i = 0;
+            }
         }
-        
-        // 足りない場合は再試行
-        if(pkmns.length < 6) return nextQuestion();
 
-        const correct = pkmns[Math.floor(Math.random() * pkmns.length)];
+        const correct = candidates[Math.floor(Math.random() * candidates.length)];
         
         document.getElementById('loading-overlay').style.display = 'none';
-        displayQuestion({ correct, choices: pkmns });
+        displayQuestion({ correct, choices: candidates });
         
         currentQIndex++;
         document.getElementById('q-count-display').textContent = questionLimit > 0 ? `第 ${currentQIndex}/${questionLimit}` : `第 ${currentQIndex} 問`;
@@ -140,14 +157,22 @@
 
     async function fetchPkmnData(id) {
         try {
-            const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒でタイムアウト
+
+            const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`, { signal: controller.signal });
+            if(!res.ok) return null;
             const data = await res.json();
-            const specRes = await fetch(data.species.url);
+            
+            const specRes = await fetch(data.species.url, { signal: controller.signal });
+            if(!specRes.ok) return null;
             const specData = await specRes.json();
             
-            const nameJa = specData.names.find(n => n.language.name === "ja-Hrkt").name;
+            const nameObj = specData.names.find(n => n.language.name === "ja-Hrkt");
+            const nameJa = nameObj ? nameObj.name : data.name;
             const img = data.sprites.other["official-artwork"].front_default || data.sprites.front_default;
             
+            clearTimeout(timeoutId);
             return { name: nameJa, stats: data.stats.map(s => s.base_stat), img };
         } catch (e) {
             return null;
