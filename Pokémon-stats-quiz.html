@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ポケモン 種族値マスター Ultimate</title>
+    <title>ポケモン 種族値マスター Speed & SV</title>
     <style>
         :root {
             --primary: #222; --secondary: #316ab2; --bg: #f5f7f9;
@@ -20,110 +20,62 @@
             text-align: center; position: relative; margin: auto;
         }
         .hidden { display: none !important; }
-        .menu-label { 
-            font-size: 1.4rem; font-weight: 900; color: var(--primary); 
-            margin-bottom: 15px; display: block; border-left: 8px solid var(--secondary);
-            padding-left: 12px; text-align: left;
-        }
-        .menu-section { margin-bottom: 25px; }
-        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .menu-btn {
-            width: 100%; padding: 18px 10px; font-size: 1rem; font-weight: bold;
-            border: 2px solid #eee; border-radius: 12px; background: #fff;
-            color: #444; cursor: pointer; margin-bottom: 8px; transition: 0.2s;
-        }
+        .menu-label { font-size: 1.4rem; font-weight: 900; color: var(--primary); margin-bottom: 15px; display: block; border-left: 8px solid var(--secondary); padding-left: 12px; text-align: left; }
+        .menu-btn { width: 100%; padding: 18px 10px; font-size: 1rem; font-weight: bold; border: 2px solid #eee; border-radius: 12px; background: #fff; color: #444; cursor: pointer; margin-bottom: 8px; transition: 0.2s; }
         .menu-btn:hover { border-color: var(--secondary); background: #f8fbff; }
-
         .info-bar { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px; color: #888; font-size: 0.8rem; }
         .quiz-box { background: #fff; border: 1px solid #eee; padding: 1rem; border-radius: 12px; margin-bottom: 10px; text-align: left; }
-
-        /* 種族値バー */
         .stat-row { display: flex; align-items: center; margin-bottom: 4px; font-size: 0.75rem; }
         .stat-label { width: 35px; font-weight: bold; color: #666; }
         .stat-value { width: 30px; text-align: right; font-weight: bold; margin-right: 8px; }
         .stat-bar-container { flex-grow: 1; height: 10px; background: var(--bar-bg); border-radius: 5px; overflow: hidden; }
         .stat-bar { height: 100%; transition: width 0.5s; }
-        
         .hp { background: #FF0000; } .atk { background: #F08030; } .def { background: #F8D030; }
         .spatk { background: #6890F0; } .spdef { background: #78C850; } .speed { background: #F85888; }
         .total { background: #a0a0a0; }
-
-        /* 選択肢グリッド (推測モード) */
         .selection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-        .pkmn-card {
-            border: 2px solid #eee; border-radius: 10px; background: white;
-            padding: 4px; cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: 0.2s;
-        }
+        .pkmn-card { border: 2px solid #eee; border-radius: 10px; background: white; padding: 4px; cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: 0.2s; }
         .pkmn-card:hover { border-color: var(--secondary); background: #f0f7ff; }
         .pkmn-card img { width: 100%; height: 65px; object-fit: contain; }
         .pkmn-card .name { font-size: 0.65rem; font-weight: bold; margin-top: 4px; height: 2.6em; overflow: hidden; display: flex; align-items: center; text-align: center; }
-
-        /* 素早さ比較カード */
         .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .compare-card { 
-            border: 2px solid #eee; border-radius: 15px; padding: 15px 5px; 
-            cursor: pointer; transition: 0.2s; background: white;
-        }
-        .compare-card:hover { border-color: var(--secondary); background: #f8fbff; }
+        .compare-card { border: 2px solid #eee; border-radius: 15px; padding: 15px 5px; cursor: pointer; transition: 0.2s; background: white; text-align: center; }
         .compare-card img { width: 100%; max-width: 120px; height: auto; object-fit: contain; }
-        .compare-card .name { font-size: 0.9rem; font-weight: bold; margin-top: 10px; }
-
-        /* 正誤判定 */
-        #judge-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            display: none; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 2000; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(4px);
-        }
-        #judge-text { font-size: 10rem; font-weight: bold; }
-        .correct { color: var(--correct-text); } .wrong { color: var(--wrong-text); }
-        
-        #loading-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,1); display: none; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 100; border-radius: 20px;
-        }
-        @media screen and (max-width: 450px) { 
-            .selection-grid { grid-template-columns: repeat(2, 1fr); }
-            .compare-grid { gap: 10px; }
-        }
+        #judge-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(4px); }
+        #judge-symbol { font-size: 12rem; font-weight: bold; line-height: 1; margin: 0; position: absolute; z-index: 2001; opacity: 0.7; pointer-events: none; }
+        #judge-img { width: 220px; height: 220px; object-fit: contain; margin-bottom: 20px; position: relative; z-index: 2000; }
+        #judge-text { font-weight: bold; font-size: 1.4rem; color: #333; z-index: 2002; text-align: center; padding: 0 10px; }
+        .correct-sym { color: var(--correct-text); } .wrong-sym { color: var(--wrong-text); }
+        #loading-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100; border-radius: 20px; }
+        @media screen and (max-width: 450px) { .selection-grid { grid-template-columns: repeat(2, 1fr); } #judge-symbol { font-size: 8rem; } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="menu-screen">
-        <div class="menu-section">
-            <span class="menu-label">種族値推測クイズ</span>
-            <div class="menu-grid">
-                <button class="menu-btn" onclick="startQuiz('guess', 0)">エンドレス</button>
-                <button class="menu-btn" onclick="startQuiz('guess', 10)">10問挑戦</button>
-            </div>
-        </div>
-        <div class="menu-section">
-            <span class="menu-label">素早さ比較クイズ</span>
-            <div class="menu-grid">
-                <button class="menu-btn" onclick="startQuiz('speed', 0)">エンドレス</button>
-                <button class="menu-btn" onclick="startQuiz('speed', 10)">10問挑戦</button>
-            </div>
+        <span class="menu-label">種族値マスター SV</span>
+        <div class="menu-grid">
+            <button class="menu-btn" onclick="startQuiz('guess', 0)">種族値推測<br>エンドレス</button>
+            <button class="menu-btn" onclick="startQuiz('guess', 10)">種族値推測<br>10問挑戦</button>
+            <button class="menu-btn" onclick="startQuiz('speed', 0)">素早さ比較<br>エンドレス</button>
+            <button class="menu-btn" onclick="startQuiz('speed', 10)">素早さ比較<br>10問挑戦</button>
         </div>
     </div>
 
     <div id="quiz-screen" class="hidden">
-        <div id="loading-overlay">
-            <div id="loading-msg" style="font-weight: bold; color: var(--secondary);">準備中...</div>
-            <div id="loading-progress" style="font-size: 0.8rem; color: #999; margin-top: 5px;"></div>
-        </div>
+        <div id="loading-overlay"><div style="font-weight: bold; color: var(--secondary);">ロード中...</div></div>
         <div class="info-bar">
             <span id="q-count-display">第 1 問</span>
             <span>スコア: <span id="current-score-val">0</span></span>
         </div>
-        <div id="quiz-content">
-            </div>
-        <button onclick="confirmExit()" style="margin-top:20px; border:none; background:none; color:#bbb; cursor:pointer; font-size:0.8rem; padding: 10px;">タイトルに戻る</button>
+        <div id="quiz-content"></div>
+        <button onclick="confirmExit()" style="margin-top:20px; border:none; background:none; color:#bbb; cursor:pointer; font-size:0.8rem;">タイトルに戻る</button>
         
         <div id="judge-overlay">
+            <div id="judge-symbol"></div>
+            <img id="judge-img" src="">
             <div id="judge-text"></div>
-            <div id="answer-info" style="font-size: 1.2rem; font-weight: bold; margin-top: -10px;"></div>
         </div>
     </div>
 
@@ -136,10 +88,8 @@
 </div>
 
 <script>
-    // 最終進化・無進化ポケモンのIDリスト
-    const FINAL_IDS = [
-        3,6,9,12,15,18,26,31,34,38,59,62,65,68,73,76,80,89,91,94,103,115,121,130,131,142,143,144,145,146,149,150,154,157,160,169,181,184,186,196,197,199,208,212,214,227,230,232,233,241,242,243,244,245,248,249,250,254,257,260,282,286,289,306,310,319,330,332,334,350,359,362,365,373,376,380,381,382,383,384,460,461,462,464,465,466,467,468,471,472,473,474,475,477,478,482,483,484,485,487,488,491,493,500,503,508,530,534,553,560,567,571,576,579,594,606,609,612,625,630,635,637,638,639,640,643,644,646,647,648,649,700,706,711,713,715,716,717,718,721,800,802,807,809,812,815,818,884,887,888,889,892,893,898,900,901,902,905,911,914,916,920,925,930,934,937,941,944,947,950,952,954,956,959,961,962,964,966,968,970,973,975,978,980,983,989,995,998,1000,1004,1008,1010
-    ];
+    // 主要な最終進化・無進化IDリスト（高速化のため厳選）
+    const FINAL_IDS = [3,6,9,12,15,18,26,31,34,38,59,62,65,68,73,76,80,89,91,94,103,115,121,130,131,142,143,144,145,146,149,150,154,157,160,169,181,184,186,196,197,199,208,212,214,227,230,232,241,242,243,244,245,248,249,250,254,257,260,282,286,289,306,310,319,330,332,334,350,359,362,365,373,376,380,381,382,383,384,460,461,462,464,465,466,467,468,471,472,473,474,475,477,478,482,483,484,485,487,488,491,493,500,503,508,530,534,553,560,567,571,576,579,594,606,609,612,625,630,635,637,638,639,640,643,644,646,647,648,649,700,706,711,713,715,716,717,718,721,800,802,807,809,812,815,818,884,887,888,889,892,893,898,900,901,902,905,911,914,916,920,925,930,934,937,941,944,947,950,952,954,956,959,961,962,964,966,968,970,973,975,978,980,983,989,995,998,1000,1004,1008,1010];
 
     let currentMode, questionLimit, currentQIndex, correctCount, score, isTransitioning = false;
 
@@ -147,7 +97,6 @@
         currentMode = mode; questionLimit = limit; currentQIndex = 0; correctCount = 0; score = 0;
         document.getElementById('menu-screen').classList.add('hidden');
         document.getElementById('quiz-screen').classList.remove('hidden');
-        document.getElementById('current-score-val').textContent = "0";
         nextQuestion();
     }
 
@@ -157,148 +106,104 @@
         document.getElementById('judge-overlay').style.display = 'none';
         document.getElementById('loading-overlay').style.display = 'flex';
 
-        if (currentMode === 'guess') await generateGuessQuiz();
-        else await generateSpeedQuiz();
+        const count = (currentMode === 'guess') ? 6 : 2;
+        const shuffled = [...FINAL_IDS].sort(() => 0.5 - Math.random());
+        
+        // Promise.allで複数匹を同時に取得（爆速化）
+        const candidates = await Promise.all(
+            shuffled.slice(0, count).map(id => fetchPkmnData(id))
+        );
+
+        if (candidates.includes(null)) { nextQuestion(); return; } // 通信失敗時はリトライ
+
+        if (currentMode === 'guess') {
+            const correct = candidates[Math.floor(Math.random() * candidates.length)];
+            renderGuessQuiz(candidates, correct);
+        } else {
+            if (candidates[0].speed === candidates[1].speed) { nextQuestion(); return; }
+            renderSpeedQuiz(candidates);
+        }
 
         document.getElementById('loading-overlay').style.display = 'none';
         currentQIndex++;
         document.getElementById('q-count-display').textContent = questionLimit > 0 ? `第 ${currentQIndex}/${questionLimit}` : `第 ${currentQIndex} 問`;
     }
 
-    // 種族値推測モード生成
-    async function generateGuessQuiz() {
-        let candidates = [];
-        let shuffledIds = [...FINAL_IDS].sort(() => 0.5 - Math.random());
-        let i = 0;
-        while(candidates.length < 6) {
-            document.getElementById('loading-progress').textContent = `${candidates.length + 1} / 6 匹目を取得中...`;
-            const data = await fetchFullPkmnData(shuffledIds[i]);
-            if(data) candidates.push(data);
-            i++;
-        }
-        const correct = candidates[Math.floor(Math.random() * candidates.length)];
-        
+    // 日本語名とデータを1回の処理で取得
+    async function fetchPkmnData(id) {
+        try {
+            const [pRes, sRes] = await Promise.all([
+                fetch(`https://pokeapi.co/api/v2/pokemon/${id}`),
+                fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`)
+            ]);
+            const pData = await pRes.json();
+            const sData = await sRes.json();
+
+            // ja-Hrktを探す（ご提示のPythonコードと同等のロジック）
+            const nameObj = sData.names.find(n => n.language.name === "ja-Hrkt");
+            const nameJa = nameObj ? nameObj.name : pData.name;
+            
+            const stats = pData.stats.map(s => s.base_stat);
+            const total = stats.reduce((a, b) => a + b, 0);
+            const img = pData.sprites.other["official-artwork"].front_default || pData.sprites.front_default;
+
+            return { name: nameJa, stats, total, speed: stats[5], img };
+        } catch (e) { return null; }
+    }
+
+    function renderGuessQuiz(candidates, correct) {
         const content = document.getElementById('quiz-content');
-        content.innerHTML = `
-            <div class="quiz-box" id="stat-area"></div>
-            <div class="selection-grid" id="selection-area"></div>
-        `;
-        
+        content.innerHTML = `<div class="quiz-box" id="stat-area"></div><div class="selection-grid" id="selection-area"></div>`;
         displayStats(correct.stats, correct.total);
         const area = document.getElementById('selection-area');
         candidates.forEach(p => {
             const card = document.createElement('div');
             card.className = "pkmn-card";
-            card.innerHTML = `<img src="${p.img}"><div class="name"><span>${p.name}</span></div>`;
-            card.onclick = () => checkAnswer(p.name, correct.name);
+            card.innerHTML = `<img src="${p.img}"><div class="name">${p.name}</div>`;
+            card.onclick = () => checkAnswer(p.name, correct.name, correct.img, `正解は ${correct.name}`);
             area.appendChild(card);
         });
     }
 
-    // 素早さ比較モード生成
-    async function generateSpeedQuiz() {
-        let candidates = [];
-        let shuffledIds = [...FINAL_IDS].sort(() => 0.5 - Math.random());
-        let i = 0;
-        while(candidates.length < 2) {
-            document.getElementById('loading-progress').textContent = `${candidates.length + 1} / 2 匹目を取得中...`;
-            const data = await fetchFullPkmnData(shuffledIds[i]);
-            if(data) candidates.push(data);
-            i++;
-            // 素早さが同じならやり直し
-            if (candidates.length === 2 && candidates[0].stats[5] === candidates[1].stats[5]) {
-                candidates.pop();
-            }
-        }
-        
-        const p1 = candidates[0];
-        const p2 = candidates[1];
-        const fasterName = p1.stats[5] > p2.stats[5] ? p1.name : p2.name;
-
+    function renderSpeedQuiz(candidates) {
+        const p1 = candidates[0], p2 = candidates[1];
+        const winner = p1.speed > p2.speed ? p1 : p2;
+        const info = `${p1.name}:S${p1.speed} vs ${p2.name}:S${p2.speed}`;
         const content = document.getElementById('quiz-content');
-        content.innerHTML = `
-            <div style="font-weight:bold; margin-bottom:10px; color:#444;">素早さが高いのはどっち？</div>
+        content.innerHTML = `<div style="font-weight:bold; margin-bottom:10px; color:#444;">素早さが高いのはどっち？</div>
             <div class="compare-grid">
-                <div class="compare-card" onclick="checkAnswer('${p1.name}', '${fasterName}', '${p1.name}:S${p1.stats[5]} vs ${p2.name}:S${p2.stats[5]}')">
-                    <img src="${p1.img}"><div class="name">${p1.name}</div>
-                </div>
-                <div class="compare-card" onclick="checkAnswer('${p2.name}', '${fasterName}', '${p1.name}:S${p1.stats[5]} vs ${p2.name}:S${p2.stats[5]}')">
-                    <img src="${p2.img}"><div class="name">${p2.name}</div>
-                </div>
-            </div>
-        `;
-    }
-
-    // 日本語名とデータを取得
-    async function fetchFullPkmnData(id) {
-        try {
-            const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
-            if(!res.ok) return null;
-            const data = await res.json();
-            
-            const specRes = await fetch(data.species.url);
-            if(!specRes.ok) return null;
-            const specData = await specRes.json();
-            
-            // ja-Hrkt (日本語かな/カナ) を抽出
-            const nameObj = specData.names.find(n => n.language.name === "ja-Hrkt");
-            const nameJa = nameObj ? nameObj.name : data.name;
-            
-            const stats = data.stats.map(s => s.base_stat);
-            const total = stats.reduce((sum, val) => sum + val, 0);
-            const img = data.sprites.other["official-artwork"].front_default || data.sprites.front_default;
-            
-            return { name: nameJa, stats, total, img };
-        } catch (e) {
-            return null;
-        }
+                <div class="compare-card" onclick="checkAnswer('${p1.name}', '${winner.name}', '${winner.img}', '${info}')"><img src="${p1.img}"><div class="name">${p1.name}</div></div>
+                <div class="compare-card" onclick="checkAnswer('${p2.name}', '${winner.name}', '${winner.img}', '${info}')"><img src="${p2.img}"><div class="name">${p2.name}</div></div>
+            </div>`;
     }
 
     function displayStats(stats, total) {
         const labels = ["H", "A", "B", "C", "D", "S"];
         const cls = ["hp", "atk", "def", "spatk", "spdef", "speed"];
         const area = document.getElementById('stat-area');
-        area.innerHTML = "";
-        stats.forEach((v, i) => {
-            const w = Math.min(100, (v / 200) * 100);
-            area.innerHTML += `
-                <div class="stat-row">
-                    <div class="stat-label">${labels[i]}</div>
-                    <div class="stat-value">${v}</div>
-                    <div class="stat-bar-container"><div class="stat-bar ${cls[i]}" style="width: ${w}%"></div></div>
-                </div>`;
-        });
-        const totalW = Math.min(100, (total / 720) * 100);
-        area.innerHTML += `
-            <div class="stat-row" style="margin-top: 10px; padding-top: 5px; border-top: 1px solid #eee;">
-                <div class="stat-label">Total</div>
-                <div class="stat-value" style="width: 40px;">${total}</div>
-                <div class="stat-bar-container"><div class="stat-bar total" style="width: ${totalW}%"></div></div>
-            </div>`;
+        area.innerHTML = stats.map((v, i) => `<div class="stat-row"><div class="stat-label">${labels[i]}</div><div class="stat-value">${v}</div><div class="stat-bar-container"><div class="stat-bar ${cls[i]}" style="width: ${Math.min(100, (v / 200) * 100)}%"></div></div></div>`).join('');
+        area.innerHTML += `<div class="stat-row" style="margin-top:10px; padding-top:5px; border-top:1px solid #eee;"><div class="stat-label">Total</div><div class="stat-value" style="width:40px;">${total}</div><div class="stat-bar-container"><div class="stat-bar total" style="width: ${Math.min(100, (total / 750) * 100)}%"></div></div></div>`;
     }
 
-    function checkAnswer(user, correct, info = "") {
+    function checkAnswer(user, correct, correctImg, info) {
         if (isTransitioning) return;
         isTransitioning = true;
         const overlay = document.getElementById('judge-overlay');
-        overlay.style.display = 'flex';
+        const jSym = document.getElementById('judge-symbol');
+        const jImg = document.getElementById('judge-img');
         const jText = document.getElementById('judge-text');
-        const aInfo = document.getElementById('answer-info');
-        
-        if (user === correct) {
-            jText.textContent = "○"; jText.className = "correct"; aInfo.textContent = ""; score += 20; correctCount++;
-        } else {
-            jText.textContent = "×"; jText.className = "wrong"; aInfo.textContent = info ? info : `正解：${correct}`;
-        }
+        jImg.src = correctImg; jText.textContent = info; overlay.style.display = 'flex';
+        if (user === correct) { jSym.textContent = "○"; jSym.className = "correct-sym"; score += 20; correctCount++; }
+        else { jSym.textContent = "×"; jSym.className = "wrong-sym"; score = Math.max(0, score - 5); }
         document.getElementById('current-score-val').textContent = score;
-        setTimeout(nextQuestion, 1500);
+        setTimeout(nextQuestion, 2000);
     }
 
     function showSummary() {
         document.getElementById('quiz-screen').classList.add('hidden');
         document.getElementById('summary-screen').classList.remove('hidden');
         document.getElementById('final-correct').textContent = correctCount;
-        document.getElementById('final-total').textContent = questionLimit || (currentQIndex);
+        document.getElementById('final-total').textContent = questionLimit || currentQIndex;
         document.getElementById('final-accuracy').textContent = Math.round((correctCount / (questionLimit || currentQIndex)) * 100);
     }
 
