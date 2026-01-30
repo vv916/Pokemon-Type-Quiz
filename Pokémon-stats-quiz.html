@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ポケモン 種族値マスター Platinum Stats</title>
+    <title>ポケモン 種族値マスター Platinum Plus</title>
     <style>
         :root {
             --primary: #222;
@@ -27,11 +27,11 @@
         }
         .container {
             background: white;
-            padding: 1.2rem;
+            padding: 1rem;
             border-radius: 20px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            width: 92%;
-            max-width: 500px;
+            width: 95%;
+            max-width: 550px;
             text-align: center;
             position: relative;
             margin: auto;
@@ -43,35 +43,36 @@
             margin-bottom: 20px; display: block; border-left: 8px solid var(--secondary);
             padding-left: 12px; text-align: left;
         }
-        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .menu-btn {
-            padding: 18px 8px; font-size: 1.1rem; font-weight: bold;
+            width: 100%; padding: 20px; font-size: 1.2rem; font-weight: bold;
             border: 2px solid #eee; border-radius: 12px; background: #fff;
-            color: #444; cursor: pointer; transition: 0.2s;
+            color: #444; cursor: pointer; margin-bottom: 10px;
         }
         .menu-btn:hover { border-color: var(--secondary); background: #f8fbff; }
 
-        .info-bar { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 15px; color: #888; }
+        .info-bar { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px; color: #888; font-size: 0.9rem; }
         .quiz-box { background: #fff; border: 1px solid #eee; padding: 1rem; border-radius: 12px; margin-bottom: 10px; text-align: left; }
 
-        /* 種族値バーのスタイル */
-        .stat-row { display: flex; align-items: center; margin-bottom: 8px; font-size: 0.85rem; }
-        .stat-label { width: 35px; font-weight: bold; color: #666; }
-        .stat-value { width: 30px; text-align: right; font-weight: bold; margin-right: 10px; }
-        .stat-bar-container { flex-grow: 1; height: 12px; background: var(--bar-bg); border-radius: 6px; overflow: hidden; }
-        .stat-bar { height: 100%; transition: width 0.5s ease-out; }
+        /* 種族値バー */
+        .stat-row { display: flex; align-items: center; margin-bottom: 5px; font-size: 0.8rem; }
+        .stat-label { width: 30px; font-weight: bold; color: #666; }
+        .stat-value { width: 30px; text-align: right; font-weight: bold; margin-right: 8px; }
+        .stat-bar-container { flex-grow: 1; height: 10px; background: var(--bar-bg); border-radius: 5px; overflow: hidden; }
+        .stat-bar { height: 100%; transition: width 0.5s; }
 
-        /* 種族値カラー */
-        .hp { background: #FF0000; }
-        .atk { background: #F08030; }
-        .def { background: #F8D030; }
-        .spatk { background: #6890F0; }
-        .spdef { background: #78C850; }
-        .speed { background: #F85888; }
+        .hp { background: #FF0000; } .atk { background: #F08030; } .def { background: #F8D030; }
+        .spatk { background: #6890F0; } .spdef { background: #78C850; } .speed { background: #F85888; }
 
-        .selection-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
-        .opt-btn { padding: 15px 5px; border: 2px solid #eee; border-radius: 10px; background: white; color: #333; font-weight: bold; font-size: 0.95rem; cursor: pointer; transition: 0.2s; }
-        .opt-btn:hover { border-color: var(--secondary); background: #f0f7ff; }
+        /* 画像付き選択肢グリッド */
+        .selection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+        .pkmn-card {
+            border: 2px solid #eee; border-radius: 10px; background: white;
+            padding: 5px; cursor: pointer; transition: 0.2s; display: flex;
+            flex-direction: column; align-items: center;
+        }
+        .pkmn-card:hover { border-color: var(--secondary); background: #f0f7ff; }
+        .pkmn-card img { width: 100%; max-width: 80px; height: auto; object-fit: contain; }
+        .pkmn-card .name { font-size: 0.7rem; font-weight: bold; margin-top: 5px; word-break: break-all; height: 2em; display: flex; align-items: center; }
 
         /* 巨大判定 */
         #judge-overlay {
@@ -79,7 +80,7 @@
             display: none; flex-direction: column; justify-content: center; align-items: center;
             z-index: 2000; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px);
         }
-        #judge-text { font-size: 40vw; max-font-size: 300px; font-weight: bold; line-height: 1; margin: 0; }
+        #judge-text { font-size: 15rem; font-weight: bold; line-height: 1; }
         #judge-text.correct { color: var(--correct-text); }
         #judge-text.wrong { color: var(--wrong-text); }
         #answer-info { font-size: 1.5rem; font-weight: bold; color: #333; margin-top: -10px; }
@@ -89,30 +90,33 @@
             background: white; display: flex; flex-direction: column; justify-content: center; align-items: center;
             z-index: 50; border-radius: 20px; font-weight: bold; color: var(--secondary);
         }
+
+        @media screen and (max-width: 450px) {
+            .selection-grid { grid-template-columns: repeat(2, 1fr); }
+            #judge-text { font-size: 10rem; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="menu-screen">
-        <span class="menu-label">種族値推測クイズ</span>
-        <div class="menu-grid">
-            <button class="menu-btn" onclick="startQuiz(0)">エンドレス</button>
-            <button class="menu-btn" onclick="startQuiz(10)">10問挑戦</button>
-        </div>
+        <span class="menu-label">種族値推測マスター</span>
+        <button class="menu-btn" onclick="startQuiz(0)">エンドレスモード</button>
+        <button class="menu-btn" onclick="startQuiz(10)">10問に挑戦</button>
+        <p style="font-size: 0.8rem; color: #888;">※初回起動はストック作成のため数秒かかります</p>
     </div>
 
     <div id="quiz-screen" class="hidden">
-        <div id="loading-overlay" class="hidden">最終進化系を探索中...</div>
+        <div id="loading-overlay" class="hidden">次を読み込み中...</div>
         <div class="info-bar">
             <span id="q-count-display">第 1 問</span>
-            <span>スコア: <span id="score">0</span></span>
+            <span>ストック: <span id="stock-count">0</span></span>
         </div>
-        <div class="quiz-box" id="stat-area">
-            </div>
-        <div style="font-size: 0.9rem; font-weight: bold; margin: 10px 0; color: #666;">この種族値のポケモンはどれ？</div>
+        <div class="quiz-box" id="stat-area"></div>
+        <div style="font-size: 0.9rem; font-weight: bold; margin: 5px 0; color: #444;">このポケモンの名前を選んでください</div>
         <div class="selection-grid" id="selection-area"></div>
-        <button onclick="confirmExit()" style="margin-top:20px; border:none; background:none; color:#bbb; cursor:pointer; font-size:0.8rem; padding: 10px;">タイトルへ戻る</button>
+        <button onclick="confirmExit()" style="margin-top:20px; border:none; background:none; color:#bbb; cursor:pointer; font-size:0.8rem; padding: 10px;">タイトルに戻る</button>
         
         <div id="judge-overlay">
             <div id="judge-text"></div>
@@ -123,135 +127,152 @@
     <div id="summary-screen" class="hidden">
         <h2 style="color: var(--secondary);">結果発表</h2>
         <div style="font-size: 4rem; font-weight: bold; color: var(--secondary); margin: 15px 0;"><span id="final-accuracy">0</span>%</div>
-        <p style="font-size: 1.2rem;">正解数: <span id="final-correct">0</span> / 10</p>
-        <button class="opt-btn" style="width: 100%; background: var(--secondary); color: white;" onclick="location.reload()">タイトルへ戻る</button>
+        <p>正答数: <span id="final-correct">0</span> / 10</p>
+        <button class="menu-btn" style="background: var(--secondary); color: white;" onclick="location.reload()">タイトルへ戻る</button>
     </div>
 </div>
 
 <script>
     let questionLimit, currentQIndex, correctCount, score, isTransitioning = false;
-    let correctAnswer = null;
+    let quizStock = []; // 問題データのストック配列
+    const MAX_STOCK = 3; // 最大ストック数
 
-    function startQuiz(limit) {
+    // 起動時にストックを開始
+    window.onload = () => { fillStock(); };
+
+    async function startQuiz(limit) {
         questionLimit = limit; currentQIndex = 0; correctCount = 0; score = 0;
         document.getElementById('menu-screen').classList.add('hidden');
         document.getElementById('quiz-screen').classList.remove('hidden');
         nextQuestion();
     }
 
+    // ストックを補充する関数
+    async function fillStock() {
+        if (quizStock.length >= MAX_STOCK) return;
+        
+        try {
+            const candidates = await Promise.all(Array(6).fill().map(() => getFinalPkmn()));
+            const correctAnswer = candidates[Math.floor(Math.random() * candidates.length)];
+            
+            quizStock.push({
+                correct: correctAnswer,
+                choices: candidates
+            });
+            
+            updateStockDisplay();
+            // ストックが足りなければ再帰的に補充
+            fillStock();
+        } catch (e) {
+            console.error("Stock error:", e);
+            setTimeout(fillStock, 2000);
+        }
+    }
+
+    function updateStockDisplay() {
+        const el = document.getElementById('stock-count');
+        if (el) el.textContent = quizStock.length;
+    }
+
     async function nextQuestion() {
         if (questionLimit > 0 && currentQIndex >= questionLimit) { showSummary(); return; }
+
+        // ストックがない場合は待機
+        if (quizStock.length === 0) {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            setTimeout(nextQuestion, 500);
+            return;
+        }
+
         currentQIndex++;
         document.getElementById('q-count-display').textContent = questionLimit > 0 ? `第 ${currentQIndex}/${questionLimit}` : `第 ${currentQIndex} 問`;
         isTransitioning = false;
         document.getElementById('judge-overlay').style.display = 'none';
-        document.getElementById('loading-overlay').classList.remove('hidden');
+        document.getElementById('loading-overlay').classList.add('hidden');
         
         const selectionArea = document.getElementById('selection-area');
         selectionArea.innerHTML = "";
         window.scrollTo(0, 0);
 
-        try {
-            // 6つの最終進化系候補を取得
-            const candidates = await Promise.all([
-                getFinalPkmn(), getFinalPkmn(), getFinalPkmn(),
-                getFinalPkmn(), getFinalPkmn(), getFinalPkmn()
-            ]);
+        // ストックから1問取り出す
+        const currentQuiz = quizStock.shift();
+        updateStockDisplay();
+        
+        // 取り出したので補充を開始
+        fillStock();
 
-            // 正解を決定
-            correctAnswer = candidates[Math.floor(Math.random() * candidates.length)];
-            
-            // 種族値の表示
-            displayStats(correctAnswer.stats);
-
-            // 選択肢ボタンの生成
-            candidates.forEach(p => {
-                const btn = document.createElement('button');
-                btn.className = "opt-btn";
-                btn.textContent = p.name;
-                btn.onclick = () => checkAnswer(p.name, correctAnswer.name);
-                selectionArea.appendChild(btn);
-            });
-
-            document.getElementById('loading-overlay').classList.add('hidden');
-        } catch (e) {
-            console.error(e);
-            nextQuestion(); // エラー時は再試行
-        }
+        // 表示
+        displayStats(currentQuiz.correct.stats);
+        currentQuiz.choices.forEach(p => {
+            const card = document.createElement('div');
+            card.className = "pkmn-card";
+            card.innerHTML = `
+                <img src="${p.img}" alt="${p.name}">
+                <div class="name">${p.name}</div>
+            `;
+            card.onclick = () => checkAnswer(p.name, currentQuiz.correct.name);
+            selectionArea.appendChild(card);
+        });
     }
 
-    // 最終進化系または進化しないポケモンを1匹取得する
     async function getFinalPkmn() {
         while (true) {
-            const id = Math.floor(Math.random() * 1000) + 1; // 1000番までに制限して安定化
+            const id = Math.floor(Math.random() * 1010) + 1; // 1010番まで拡大
             const res = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}/`);
             if (!res.ok) continue;
-            const speciesData = await res.json();
+            const species = await res.json();
 
-            // 進化情報を取得
-            const evoRes = await fetch(speciesData.evolution_chain.url);
-            const evoData = await evoRes.json();
+            const evoRes = await fetch(species.evolution_chain.url);
+            const evo = await evoRes.json();
 
-            // そのポケモンが進化系統の最後（リーフノード）であるかチェック
-            if (isFinalEvolution(evoData.chain, speciesData.name)) {
-                const pkmnRes = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}/`);
-                const pkmnData = await pkmnRes.json();
+            if (isFinal(evo.chain, species.name)) {
+                const pRes = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}/`);
+                const pData = await pRes.json();
                 
-                const nameObj = speciesData.names.find(n => n.language.name === "ja-Hrkt");
-                const name = nameObj ? nameObj.name : speciesData.name;
+                const nameJa = species.names.find(n => n.language.name === "ja-Hrkt").name;
+                const img = pData.sprites.other["official-artwork"].front_default || pData.sprites.front_default;
                 
-                return {
-                    name: name,
-                    stats: pkmnData.stats.map(s => s.base_stat)
-                };
+                return { name: nameJa, stats: pData.stats.map(s => s.base_stat), img: img };
             }
         }
     }
 
-    // 進化ツリーを再帰的に走査して、最終進化系か判定する
-    function isFinalEvolution(chain, currentSpeciesName) {
-        if (chain.species.name === currentSpeciesName) {
-            return chain.evolves_to.length === 0;
-        }
-        for (let nextLink of chain.evolves_to) {
-            const found = isFinalEvolution(nextLink, currentSpeciesName);
-            if (found !== null) return found;
+    function isFinal(chain, name) {
+        if (chain.species.name === name) return chain.evolves_to.length === 0;
+        for (let next of chain.evolves_to) {
+            const res = isFinal(next, name);
+            if (res !== null) return res;
         }
         return null;
     }
 
     function displayStats(stats) {
         const labels = ["H", "A", "B", "C", "D", "S"];
-        const classes = ["hp", "atk", "def", "spatk", "spdef", "speed"];
+        const cls = ["hp", "atk", "def", "spatk", "spdef", "speed"];
         const area = document.getElementById('stat-area');
         area.innerHTML = "";
-
-        stats.forEach((val, i) => {
-            const width = Math.min(100, (val / 255) * 100); // 最大値を255として計算
+        stats.forEach((v, i) => {
+            const w = Math.min(100, (v / 200) * 100);
             area.innerHTML += `
                 <div class="stat-row">
                     <div class="stat-label">${labels[i]}</div>
-                    <div class="stat-value">${val}</div>
-                    <div class="stat-bar-container">
-                        <div class="stat-bar ${classes[i]}" style="width: ${width}%"></div>
-                    </div>
-                </div>
-            `;
+                    <div class="stat-value">${v}</div>
+                    <div class="stat-bar-container"><div class="stat-bar ${cls[i]}" style="width: ${w}%"></div></div>
+                </div>`;
         });
     }
 
-    function checkAnswer(userInput, correctInput) {
+    function checkAnswer(user, correct) {
         if (isTransitioning) return;
         isTransitioning = true;
         const overlay = document.getElementById('judge-overlay'), jText = document.getElementById('judge-text'), aInfo = document.getElementById('answer-info');
         overlay.style.display = 'flex';
         
-        if (userInput === correctInput) {
-            jText.textContent = "○"; jText.className = "correct"; aInfo.textContent = ""; score += 20; correctCount++;
+        if (user === correct) {
+            jText.textContent = "○"; jText.className = "correct"; aInfo.textContent = ""; correctCount++;
         } else {
-            jText.textContent = "×"; jText.className = "wrong"; aInfo.textContent = `正解：${correctInput}`; score = Math.max(0, score - 5);
+            jText.textContent = "×"; jText.className = "wrong"; aInfo.textContent = `正解：${correct}`;
         }
-        document.getElementById('score').textContent = score;
         setTimeout(nextQuestion, 1500);
     }
 
