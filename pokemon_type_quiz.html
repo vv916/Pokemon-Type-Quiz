@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ポケモン タイプ・素早さマスター Platinum V8</title>
+    <title>ポケモン タイプ・素早さマスター Platinum V8.1</title>
     <style>
         :root {
             --primary: #222;
@@ -212,7 +212,6 @@
 
     function calculate(atk, defs) { let m = 1; defs.forEach(d => { if (typeChart[atk][d] !== undefined) m *= typeChart[atk][d]; }); return m; }
 
-    // --- 各モード生成 ---
     function generateMultiplierQuiz(qArea, sArea) {
         let atk = types[Math.floor(Math.random() * types.length)], def = getRandomDefense(false);
         qArea.innerHTML = `<div style="font-size:0.8rem; color:#999;">攻撃：${badge(atk)} → 防御：${def.map(t => badge(t)).join('')}</div><div style="font-size:1.1rem; font-weight:bold;">ダメージ倍率は？</div>`;
@@ -275,38 +274,52 @@
         sArea.appendChild(grid);
     }
 
-    // --- 素早さ比較モード (PokeAPI利用) ---
+    // --- 素早さ比較モード ---
     async function generateSpeedQuiz(qArea, sArea) {
         qArea.innerHTML = "データを取得中...";
         try {
-            const id1 = Math.floor(Math.random() * 1010) + 1;
-            const id2 = Math.floor(Math.random() * 1010) + 1;
+            // IDの範囲を1〜1000に制限して安定化
+            const id1 = Math.floor(Math.random() * 1000) + 1;
+            const id2 = Math.floor(Math.random() * 1000) + 1;
             if(id1 === id2) return generateSpeedQuiz(qArea, sArea);
 
             const [p1, p2] = await Promise.all([getPkmn(id1), getPkmn(id2)]);
-            if(p1.speed === p2.speed) return generateSpeedQuiz(qArea, sArea);
+            if(!p1 || !p2 || p1.speed === p2.speed) return generateSpeedQuiz(qArea, sArea);
 
             qArea.innerHTML = `<div style="font-size:1rem; font-weight:bold; margin-bottom:10px;">素早さが高いのはどっち？</div>
                 <div class="speed-pkmn-container">
-                    <div class="speed-card" onclick="checkAnswer('${p1.name}', '${p1.speed > p2.speed ? p1.name : p2.name}', '${p1.name}:${p1.speed} vs ${p2.name}:${p2.speed}')">
+                    <div class="speed-card" onclick="checkAnswer('${p1.name}', '${p1.speed > p2.speed ? p1.name : p2.name}', '${p1.name}:S${p1.speed} vs ${p2.name}:S${p2.speed}')">
                         <img src="${p1.img}" alt="${p1.name}"><div class="name">${p1.name}</div>
                     </div>
-                    <div class="speed-card" onclick="checkAnswer('${p2.name}', '${p1.speed > p2.speed ? p1.name : p2.name}', '${p1.name}:${p1.speed} vs ${p2.name}:${p2.speed}')">
+                    <div class="speed-card" onclick="checkAnswer('${p2.name}', '${p1.speed > p2.speed ? p1.name : p2.name}', '${p1.name}:S${p1.speed} vs ${p2.name}:S${p2.speed}')">
                         <img src="${p2.img}" alt="${p2.name}"><div class="name">${p2.name}</div>
                     </div>
                 </div>`;
-        } catch (e) { qArea.innerHTML = "データの取得に失敗しました。再試行してください。"; }
+        } catch (e) { 
+            console.error(e);
+            qArea.innerHTML = "データの取得に失敗しました。<br><button onclick='nextQuestion()' class='menu-btn' style='margin-top:10px;'>再試行</button>"; 
+        }
     }
 
     async function getPkmn(id) {
-        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
-        const data = await res.json();
-        const resSpecies = await fetch(data.species.url);
-        const dataSpecies = await resSpecies.json();
-        const name = dataSpecies.names.find(n => n.language.name === "ja-Hrkt").name;
-        const img = data.sprites.other["official-artwork"].front_default || data.sprites.front_default;
-        const speed = data.stats.find(s => s.stat.name === "speed").base_stat;
-        return { name, img, speed };
+        try {
+            const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`, { mode: 'cors' });
+            if (!res.ok) return null;
+            const data = await res.json();
+            
+            const resSpecies = await fetch(data.species.url, { mode: 'cors' });
+            if (!resSpecies.ok) return null;
+            const dataSpecies = await resSpecies.json();
+            
+            const nameObj = dataSpecies.names.find(n => n.language.name === "ja-Hrkt");
+            const name = nameObj ? nameObj.name : data.name;
+            const img = data.sprites.other["official-artwork"].front_default || data.sprites.front_default;
+            const speed = data.stats.find(s => s.stat.name === "speed").base_stat;
+            
+            return { name, img, speed };
+        } catch (e) {
+            return null;
+        }
     }
 
     // --- 共通パーツ ---
