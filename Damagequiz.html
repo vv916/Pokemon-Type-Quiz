@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ポケモンSV レギュレーションG ダメージ計算クイズ (150体規模AI搭載)</title>
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --primary: #ff5252;
+            --accent: #4a90e2;
+            --text-main: #333;
+            --text-sub: #666;
+        }
+        body {
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: var(--text-main);
+        }
+       .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+        }
+        
+        #quiz-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 900px;
+            width: 100%;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+       .mon-card {
+            background: #fff;
+            border: 1px solid #e1e4e8;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            transition: transform 0.2s ease;
+        }
+        
+       .mon-card.attacker { border-top: 4px solid var(--primary); }
+       .mon-card.defender { border-top: 4px solid var(--accent); }
+
+       .mon-img {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 4px rgba(0,0,0,0.1));
+        }
+
+       .mon-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 10px 0 5px;
+        }
+
+       .mon-meta {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 6px;
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+
+       .vs-divider {
+            grid-column: 1 / -1;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: #ccc;
+            margin: -10px 0;
+        }
+
+       .question-area {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px dashed #eee;
+        }
+
+       .move-badge {
+            background: #333;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+       .options {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: var(--card-bg);
+            border: 2px solid var(--accent);
+            color: var(--accent);
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: var(--accent);
+            color: #fff;
+        }
+        button.next-btn {
+            background: var(--text-main);
+            border-color: var(--text-main);
+            color: #fff;
+            margin-top: 20px;
+            display: none;
+        }
+
+        #result-display {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 20px;
+            margin-top: 10px;
+            border-radius: 8px;
+            display: none;
+        }
+       .correct { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+       .incorrect { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+       .loading {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            color: var(--text-sub);
+            z-index: 100;
+        }
+
+        @media (max-width: 600px) {
+            #quiz-container { grid-template-columns: 1fr; }
+           .vs-divider { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Reg G Damage Calc Quiz</h1>
+    <div class="subtitle">Powered by PokeAPI & @smogon/calc (Gen 9)</div>
+</header>
+
+<div id="loading-screen" class="loading">対戦データを構築中...</div>
+
+<div id="quiz-container">
+    <div class="mon-card attacker">
+        <div class="role-label" style="color:var(--primary); font-size:0.8rem; font-weight:bold;">ATTACKER</div>
+        <img id="atk-img" class="mon-img" src="" alt="">
+        <div id="atk-name" class="mon-name">Loading...</div>
+        <div id="atk-meta" class="mon-meta"></div>
+    </div>
+
+    <div class="vs-divider">VS</div>
+
+    <div class="mon-card defender">
+        <div class="role-label" style="color:var(--accent); font-size:0.8rem; font-weight:bold;">DEFENDER</div>
+        <img id="def-img" class="mon-img" src="" alt="">
+        <div id="def-name" class="mon-name">Loading...</div>
+        <div id="def-meta" class="mon-meta"></div>
+    </div>
+
+    <div class="question-area">
+        <div>攻撃技: <span id="move-name" class="move-badge">---</span></div>
+        <div class="options">
+            <button onclick="checkAnswer(0)">確定3発以上 (< 40%)</button>
+            <button onclick="checkAnswer(1)">乱数2発圏内 (40% - 60%)</button>
+            <button onclick="checkAnswer(2)">確定2発 / 乱数1発 (60% - 99%)</button>
+            <button onclick="checkAnswer(3)">確定1発 (100% +)</button>
+        </div>
+        <div id="result-display"></div>
+        <button id="next-btn" class="next-btn" onclick="initRound()">次の対戦へ</button>
+    </div>
+</div>
+
+<script src="https://unpkg.com/@smogon/calc@0.6.0/dist/data/production.min.js"></script>
+<script src="https://unpkg.com/@smogon/calc@0.6.0/dist/index.min.js"></script>
+
+<script>
+    /**
+     * Configuration: Regulation G Target List (Top 150 Representative)
+     * PokeAPI key names (kebab-case)
+     */
+    const TARGET_MONS =;
+
+    // Cache to prevent redundant API calls
+    const CACHE = new Map();
+
+    // --- LOGIC: AUTO SET BUILDER (SIMPLE AI) ---
+    class AutoSetBuilder {
+        /**
+         * Infers competitive stats from base stats.
+         * Heuristics based on Regulation G Speed Tiers & Damage thresholds.
+         */
+        static build(apiData) {
+            const stats = apiData.stats; // {hp, atk, def, spa, spd, spe}
+            const type1 = apiData.types;
+            
+            // 1. Role Classification
+            // S90 is a key tier in Reg G (Overtaking base 90 restricteds like Kyogre/Groudon is vital)
+            const isFast = stats.spe >= 90; 
+            const bestAtk = Math.max(stats.atk, stats.spa);
+            const isAttacker = bestAtk >= 100 |
+
+| isFast;
+            
+            let role = "";
+            let category = ""; // Physical or Special
+            
+            if (stats.atk >= stats.spa) {
+                category = "Physical";
+            } else {
+                category = "Special";
+            }
+
+            if (isAttacker) {
+                role = isFast? "Fast Sweeper" : "Bulky Attacker";
+            } else {
+                role = "Wall/Support";
+            }
+
+            // 2. EV Allocation (252/252/4 Template)
+            const evs = { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
+            
+            if (role === "Fast Sweeper") {
+                evs.spe = 252;
+                evs[category === "Physical"? "atk" : "spa"] = 252;
+                evs.hp = 4;
+            } else if (role === "Bulky Attacker") {
+                evs.hp = 252;
+                evs[category === "Physical"? "atk" : "spa"] = 252;
+                evs.def = 4;
+            } else {
+                // Wall: Max HP + Max Better Defense
+                evs.hp = 252;
+                if (stats.def >= stats.spd) {
+                    evs.def = 252; evs.spd = 4;
+                } else {
+                    evs.spd = 252; evs.def = 4;
+                }
+            }
+
+            // 3. Nature Selection
+            let nature = "Serious";
+            if (role === "Fast Sweeper") {
+                // In Reg G, Speed is king. Usually +Speed nature unless stats are weird.
+                if (stats.spe >= 100) {
+                    nature = category === "Physical"? "Jolly" : "Timid";
+                } else {
+                    nature = category === "Physical"? "Adamant" : "Modest";
+                }
+            } else if (role === "Bulky Attacker") {
+                nature = category === "Physical"? "Adamant" : "Modest";
+            } else {
+                nature = stats.def >= stats.spd? "Bold" : "Calm";
+            }
+
+            // 4. Item Selection (Simplified)
+            let item = "Leftovers"; // Default safe
+            if (role.includes("Sweeper")) item = "Life Orb";
+            if (role.includes("Bulky Attacker")) item = "Assault Vest"; // Common in Reg G
+            if (role.includes("Wall")) item = "Sitrus Berry";
+            // Specific overrides for Restricteds could be added here (e.g. Rusted Sword)
+
+            // 5. Move Selection
+            const move = this.getHighPowerMove(type1, category);
+
+            return {
+                category,
+                role,
+                evs,
+                nature,
+                item,
+                move
+            };
+        }
+
+        static getHighPowerMove(type, category) {
+            // Representative moves for damage calc context
+            const moves = {
+                "physical": {
+                    "normal": "Double-Edge", "fire": "Flare Blitz", "water": "Liquidation", "grass": "Wood Hammer",
+                    "electric": "Wild Charge", "ice": "Icicle Crash", "fighting": "Close Combat", "poison": "Gunk Shot",
+                    "ground": "Earthquake", "flying": "Brave Bird", "psychic": "Psycho Cut", "bug": "U-turn",
+                    "rock": "Stone Edge", "ghost": "Poltergeist", "dragon": "Outrage", "dark": "Knock Off",
+                    "steel": "Iron Head", "fairy": "Play Rough"
+                },
+                "special": {
+                    "normal": "Hyper Voice", "fire": "Fire Blast", "water": "Hydro Pump", "grass": "Leaf Storm",
+                    "electric": "Thunderbolt", "ice": "Ice Beam", "fighting": "Focus Blast", "poison": "Sludge Bomb",
+                    "ground": "Earth Power", "flying": "Hurricane", "psychic": "Psychic", "bug": "Bug Buzz",
+                    "rock": "Power Gem", "ghost": "Shadow Ball", "dragon": "Draco Meteor", "dark": "Dark Pulse",
+                    "steel": "Flash Cannon", "fairy": "Moonblast"
+                }
+            };
+            return moves[category.toLowerCase()][type] |
+
+| "Tackle";
+        }
+
+        static normalizeName(name) {
+            // Convert PokeAPI kebab-case to Smogon Title Case
+            // Handle edge cases for Smogon Dex
+            const specialMap = {
+                "calyrex-shadow": "Calyrex-Shadow",
+                "calyrex-ice": "Calyrex-Ice",
+                "flutter-mane": "Flutter Mane",
+                "iron-bundle": "Iron Bundle",
+                "great-tusk": "Great Tusk",
+                "scream-tail": "Scream Tail",
+                "brute-bonnet": "Brute Bonnet",
+                "iron-treads": "Iron Treads",
+                "iron-hands": "Iron Hands",
+                "iron-jugulis": "Iron Jugulis",
+                "iron-moth": "Iron Moth",
+                "iron-thorns": "Iron Thorns",
+                "roaring-moon": "Roaring Moon",
+                "iron-valiant": "Iron Valiant",
+                "walking-wake": "Walking Wake",
+                "iron-leaves": "Iron Leaves",
+                "gouging-fire": "Gouging Fire",
+                "raging-bolt": "Raging Bolt",
+                "iron-crown": "Iron Crown",
+                "iron-boulder": "Iron Boulder",
+                "chien-pao": "Chien-Pao",
+                "chi-yu": "Chi-Yu",
+                "wo-chien": "Wo-Chien",
+                "ting-lu": "Ting-Lu",
+                "urshifu-rapid-strike": "Urshifu-Rapid-Strike",
+                "urshifu-single-strike": "Urshifu",
+                "landorus-therian": "Landorus-Therian",
+                "tornadus-therian": "Tornadus-Therian",
+                "thundurus-therian": "Thundurus-Therian",
+                "enamorus-therian": "Enamorus-Therian",
+                "ogerpon-wellspring": "Ogerpon-Wellspring",
+                "ogerpon-hearthflame": "Ogerpon-Hearthflame",
+                "ogerpon-cornerstone": "Ogerpon-Cornerstone",
+                "dialga-origin": "Dialga-Origin",
+                "palkia-origin": "Palkia-Origin",
+                "giratina-origin": "Giratina-Origin",
+                "zacian": "Zacian-Crowned", // Assume Crowned for Reg G
+                "zamazenta": "Zamazenta-Crowned",
+                "calyrex": "Calyrex", // Base form
+                "ninetales-alola": "Ninetales-Alola",
+                "arcanine-hisui": "Arcanine-Hisui"
+            };
+            
+            if (specialMap[name]) return specialMap[name];
+            
+            return name.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+        }
+    }
+
+    // --- DATA FETCHING ---
+    async function getPokemonData(id) {
+        if (CACHE.has(id)) return CACHE.get(id);
+
+        try {
+            // Parallel Fetch for Stats and Japanese Name
+            const pRes = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+            const pData = await pRes.json();
+            
+            // Extract Species URL to get names
+            const sRes = await fetch(pData.species.url);
+            const sData = await sRes.json();
+
+            const jpNameObj = sData.names.find(n => n.language.name === "ja");
+            const jpName = jpNameObj? jpNameObj.name : pData.name;
+
+            const data = {
+                apiName: pData.name,
+                jpName: jpName,
+                sprite: pData.sprites.front_default,
+                stats: {
+                    hp: pData.stats.base_stat,
+                    atk: pData.stats.base_stat,
+                    def: pData.stats.base_stat,
+                    spa: pData.stats.base_stat,
+                    spd: pData.stats.base_stat,
+                    spe: pData.stats.base_stat,
+                [span_0](start_span)[span_0](end_span)},
+                types: pData.types.map(t => t[span_3](start_span)[span_3](end_span).type.name)
+            };
+
+            CACHE.se[span_4](start_span)[span_4](end_span)t(id, data);
+            return data;
+        } [span_5](start_span)[span_5](end_span)catch (e) {
+            console.error("Fetch fai[span_6](start_span)[span_6](end_span)led for", id, e);
+            return null;
+        }
+    }
+
+    // --- QUIZ LOGIC ---
+    let currentCalc = null;
+
+    async function initRound() {
+        document.getElementById("loading-screen").style.display = "flex";
+        document.getElementById("result-display").style.display = "none";
+        document.querySelector(".next-btn").style.display = "none";
+
+        // Random Select
+        const atkId = TARGET_MONS;
+        const defId = TARGET_MONS;
+
+        const = await Promise.all();
+
+        if (!atkData ||!defData) {
+            initRound(); // Retry on failure
+            return;
+        }
+
+        // Build Sets
+        const atkSet = AutoSetBuilder.build(atkData);
+        const defSet = AutoSetBuilder.build(defData);
+
+        // UI Update
+        updateCard("atk", atkData, atkSet);
+        updateCard("def", defData, defSet);
+        document.getElementById("move-name").textContent = `${atkSet.move} (${atkSet.category})`;
+
+        // Calc Calculation
+        const gen = calc.Generations.get(9);
+        const attacker = new calc.Pokemon(gen, AutoSetBuilder.normalizeName(atkData.apiName), {
+            item: atkSet.item,
+            nature: atkSet.nature,
+            evs: atkSet.evs,
+        });
+        const defender = new calc.Pokemon(gen, AutoSetBuilder.normalizeName(defData.apiName), {
+            item: defSet.item,
+            nature: defSet.nature,
+            evs: defSet.evs,
+        });
+        const move = new calc.Move(gen, atkSet.move);
+
+        currentCalc = calc.calculate(gen, attacker, defender, move);
+        
+        document.getElementById("loading-screen").style.display = "none";
+    }
+
+    function updateCard(side, data, set) {
+        document.getElementById(`${side}-img`).src = data.sprite;
+        document.getElementById(`${side}-name`).innerText = data.jpName;
+        
+        // Format Stats for display
+        const evText = Object.entries(set.evs)
+           .filter(([k,v]) => v > 0)
+           .map(([k,v]) => `${k.toUpperCase()}:${v}`)
+           .join(" / ");
+
+        document.getElementById(`${side}-meta`).innerHTML = `
+            <div><strong>${set.role}</strong> (${set.nature})</div>
+            <div>持ち物: ${set.item}</div>
+            <div style="font-size:0.75rem; color:#888;">${evText}</div>
+        `;
+    }
+
+    window.checkAnswer = function(choice) {
+        if (!currentCalc) return;
+
+        const resultDisplay = document.getElementById("result-display");
+        const hp = currentCalc.defender.stats.hp;
+        const damageRange = currentCalc.result.range(); // [min, max]
+        const maxDmg = damageRange;
+        
+        const percentage = (maxDmg / hp) * 100;
+        
+        // Determine correct bucket
+        let answer = -1;
+        if (percentage < 40) answer = 0;
+        else if (percentage < 60) answer = 1;
+        else if[span_1](start_span)[span_1](end_span) (percentage < 100) answer = 2;
+        else answer = 3;
+
+        const isCorrect = choice === answer;
+        
+        resultDisplay.style.display = "block";
+        resultDisplay.className = isCorrect? "correct" : "incorrect";
+        resultDisplay.innerHTML = `
+            <h3>${isCorrect? "正解！" : "不正解..."}</h3>
+            <p><strong>ダメージ:</strong> ${damageRange} - ${damageRange} (HP: ${hp})</p>
+            <p><strong>割合:</strong> ${((damageRange/hp)*100).toFixed(1)}% - ${percentage.toFixed(1)}%</p>
+            <p style="font-size:0.9rem">${currentCalc.result.desc()}</p>
+        `;
+
+        document.query[span_2](start_span)[span_2](end_span)Selector(".next-btn").style.display = "inline-block";
+    };
+
+    // Start
+    initRound();
+</script>
+
+</body>
+</html>
